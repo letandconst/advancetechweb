@@ -1,16 +1,24 @@
-import { Home, LayoutDashboard, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, LayoutDashboard, Settings, ChevronLeft, ChevronRight, Users, BarChart3, Package, Wrench, FileText, ClipboardList } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useUIStore } from '../store'
+import { ROUTES } from '../constants'
 import { cn } from '../utils/classNames'
 
 const navigation = [
-  { label: 'Overview', icon: LayoutDashboard },
-  { label: 'Settings', icon: Settings },
-  { label: 'Home', icon: Home }
+  { label: 'Dashboard', icon: LayoutDashboard, path: ROUTES.DASHBOARD },
+  { label: 'Job Orders', icon: ClipboardList, path: ROUTES.JOB_ORDERS },
+  { label: 'Mechanics', icon: Users, path: ROUTES.MECHANICS },
+  { label: 'Services', icon: Wrench, path: ROUTES.SERVICES },
+  { label: 'Inventory', icon: Package, path: ROUTES.INVENTORY },
+  { label: 'Reports', icon: BarChart3, path: ROUTES.REPORTS },
+  { label: 'Settings', icon: Settings, path: ROUTES.SETTINGS },
 ]
 
 export function Sidebar() {
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   return (
     <div className="relative min-h-screen">
@@ -43,11 +51,18 @@ export function Sidebar() {
             <nav className="space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon
+                const isActive = location.pathname === item.path
                 return (
                   <button
                     key={item.label}
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    onClick={() => navigate(item.path)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition",
+                      isActive
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    )}
                   >
                     <Icon className="h-5 w-5" />
                     {isSidebarOpen && item.label}

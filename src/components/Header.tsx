@@ -10,8 +10,6 @@ export function Header() {
   const { user, logout } = useAuth()
 
 
-  console.log('user in Header:', user)
-
   return (
     <header className="flex items-center justify-between mb-6">
       <div>

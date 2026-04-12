@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { useAvatarUrl } from '../hooks/useAvatarUrl'
+
 interface AvatarBadgeProps {
   avatarUrl?: string | null
   fullName?: string
@@ -31,13 +34,20 @@ function getInitials(fullName?: string, firstName?: string, lastName?: string, u
 
 export function AvatarBadge({ avatarUrl, fullName, firstName, lastName, username, size = 48 }: AvatarBadgeProps) {
   const initials = getInitials(fullName, firstName, lastName, username)
+  const resolvedAvatarUrl = useAvatarUrl(avatarUrl)
+  const [hasImageError, setHasImageError] = useState(false)
 
-  return avatarUrl ? (
+  useEffect(() => {
+    setHasImageError(false)
+  }, [resolvedAvatarUrl])
+
+  return resolvedAvatarUrl && !hasImageError ? (
     <img
-      src={avatarUrl}
+      src={resolvedAvatarUrl}
       alt={fullName || username || 'User avatar'}
       className="h-12 w-12 rounded-full object-cover"
       style={{ width: size, height: size }}
+      onError={() => setHasImageError(true)}
     />
   ) : (
     <div
