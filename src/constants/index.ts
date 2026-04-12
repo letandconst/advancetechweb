@@ -3,6 +3,11 @@ export const STORAGE_KEYS = {
   darkMode: 'advanced-tech-dark-mode'
 } as const
 
+export const STORAGE_BUCKETS = {
+  profileAvatars: 'avatars',
+  mechanicAvatars: 'mechanic-avatars'
+} as const
+
 export const THEME = {
   colors: {
     light: {
@@ -15,3 +20,25 @@ export const THEME = {
     }
   }
 } as const
+
+export const ROUTES = {
+  DASHBOARD: '/',
+  JOB_ORDERS: '/job-orders',
+  MECHANICS: '/mechanics',
+  SERVICES: '/services',
+  INVENTORY: '/inventory',
+  REPORTS: '/reports',
+  SETTINGS: '/settings',
+  PROFILE: '/profile',
+  LOGIN: '/login'
+} as const
+
+export const SERVICE_SPECIALIZATIONS = [
+  'Power Steering',
+  'Engine Electrical',
+  'Fuel Injected Engine',
+  'Engine Overhaul',
+  'Repair Computer Box',
+  'Under Chassis',
+  'Engine Scan'
+] as const

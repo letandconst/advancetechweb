@@ -18,6 +18,10 @@ interface DataTableProps<T> {
   emptyMessage?: string
   pageSize?: number
   enablePagination?: boolean
+  paginationMode?: 'client' | 'server'
+  currentPage?: number
+  totalItems?: number
+  onPageChange?: (page: number) => void
 }
 
 export function DataTable<T extends { id: string }>({
@@ -30,43 +34,65 @@ export function DataTable<T extends { id: string }>({
   emptyMessage = 'No data available',
   pageSize = 10,
   enablePagination = true,
+  paginationMode = 'client',
+  currentPage,
+  totalItems,
+  onPageChange,
 }: DataTableProps<T>) {
-  const [currentPage, setCurrentPage] = useState(1)
+  const [internalPage, setInternalPage] = useState(1)
+  const activePage = paginationMode === 'server' ? Math.max(currentPage ?? 1, 1) : internalPage
+  const totalCount = paginationMode === 'server' ? (totalItems ?? 0) : data.length
 
   const totalPages = useMemo(() => {
     if (!enablePagination) {
       return 1
     }
 
-    return Math.max(1, Math.ceil(data.length / pageSize))
-  }, [data.length, enablePagination, pageSize])
+    return Math.max(1, Math.ceil(totalCount / pageSize))
+  }, [totalCount, enablePagination, pageSize])
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
+    if (paginationMode === 'client' && internalPage > totalPages) {
+      setInternalPage(totalPages)
     }
-  }, [currentPage, totalPages])
+  }, [internalPage, paginationMode, totalPages])
 
   const paginatedData = useMemo(() => {
     if (!enablePagination) {
       return data
     }
 
-    const startIndex = (currentPage - 1) * pageSize
-    return data.slice(startIndex, startIndex + pageSize)
-  }, [currentPage, data, enablePagination, pageSize])
+    if (paginationMode === 'server') {
+      return data
+    }
 
-  const startItem = data.length === 0 ? 0 : (currentPage - 1) * pageSize + 1
+    const startIndex = (activePage - 1) * pageSize
+    return data.slice(startIndex, startIndex + pageSize)
+  }, [activePage, data, enablePagination, pageSize, paginationMode])
+
+  const startItem = totalCount === 0 ? 0 : (activePage - 1) * pageSize + 1
   const endItem = enablePagination
-    ? Math.min(currentPage * pageSize, data.length)
-    : data.length
+    ? Math.min(activePage * pageSize, totalCount)
+    : totalCount
 
   function goToPreviousPage() {
-    setCurrentPage((prev) => Math.max(prev - 1, 1))
+    const nextPage = Math.max(activePage - 1, 1)
+    if (paginationMode === 'server') {
+      onPageChange?.(nextPage)
+      return
+    }
+
+    setInternalPage(nextPage)
   }
 
   function goToNextPage() {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+    const nextPage = Math.min(activePage + 1, totalPages)
+    if (paginationMode === 'server') {
+      onPageChange?.(nextPage)
+      return
+    }
+
+    setInternalPage(nextPage)
   }
 
   if (loading) {
@@ -167,19 +193,19 @@ export function DataTable<T extends { id: string }>({
               variant="secondary"
               size="sm"
               onClick={goToPreviousPage}
-              disabled={currentPage === 1}
+              disabled={activePage === 1}
             >
               Previous
             </Button>
             <span className="min-w-[110px] text-center font-medium text-slate-700 dark:text-slate-300">
-              Page {currentPage} of {totalPages}
+              Page {activePage} of {totalPages}
             </span>
             <Button
               type="button"
               variant="secondary"
               size="sm"
               onClick={goToNextPage}
-              disabled={currentPage === totalPages}
+              disabled={activePage === totalPages}
             >
               Next
             </Button>

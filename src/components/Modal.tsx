@@ -7,12 +7,13 @@ interface ModalProps {
   isOpen: boolean
   title: string
   description?: string
+  moduleLabel?: string
   onClose: () => void
   children: ReactNode
   className?: string
 }
 
-export function Modal({ isOpen, title, description, onClose, children, className }: ModalProps) {
+export function Modal({ isOpen, title, description, moduleLabel, onClose, children, className }: ModalProps) {
   useEffect(() => {
     if (!isOpen) {
       return
@@ -63,7 +64,9 @@ export function Modal({ isOpen, title, description, onClose, children, className
             <X className="h-4 w-4" />
           </button>
           <div className="pr-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-sky-600 dark:text-sky-400">Mechanics</p>
+            {moduleLabel && (
+              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-sky-600 dark:text-sky-400">{moduleLabel}</p>
+            )}
             <h2 id="modal-title" className="mt-2 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
               {title}
             </h2>
