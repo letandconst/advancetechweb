@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { JobOrdersPage } from './pages/JobOrdersPage'
+import { JobOrderFormPage } from './pages/JobOrderFormPage'
 import { MechanicsPage } from './pages/MechanicsPage'
 import { ServicesPage } from './pages/ServicesPage'
 import { InventoryPage } from './pages/InventoryPage'
@@ -29,6 +30,22 @@ function App() {
           element={
             <Layout>
               <JobOrdersPage />
+            </Layout>
+          }
+        />
+        <Route
+          path={ROUTES.JOB_ORDERS_NEW}
+          element={
+            <Layout>
+              <JobOrderFormPage />
+            </Layout>
+          }
+        />
+        <Route
+          path={ROUTES.JOB_ORDERS_EDIT}
+          element={
+            <Layout>
+              <JobOrderFormPage />
             </Layout>
           }
         />

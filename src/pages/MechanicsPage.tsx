@@ -337,6 +337,7 @@ export function MechanicsPage() {
       <Modal
         isOpen={isFormOpen}
         onClose={handleCancel}
+        moduleLabel="Mechanics"
         title={editingMechanic ? 'Edit mechanic' : 'Add mechanic'}
         description={editingMechanic ? 'Update mechanic details without leaving the roster view.' : 'Create a new mechanic record using a focused modal workflow.'}
       >
@@ -351,6 +352,7 @@ export function MechanicsPage() {
       <Modal
         isOpen={!!viewingMechanic}
         onClose={handleCloseView}
+        moduleLabel="Mechanics"
         title={viewingMechanic?.name ?? ''}
         description="Mechanic profile — read only"
       >

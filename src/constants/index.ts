@@ -24,6 +24,8 @@ export const THEME = {
 export const ROUTES = {
   DASHBOARD: '/',
   JOB_ORDERS: '/job-orders',
+  JOB_ORDERS_NEW: '/job-orders/new',
+  JOB_ORDERS_EDIT: '/job-orders/:id/edit',
   MECHANICS: '/mechanics',
   SERVICES: '/services',
   INVENTORY: '/inventory',

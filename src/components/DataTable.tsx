@@ -8,12 +8,21 @@ interface Column<T> {
   sortable?: boolean
 }
 
+interface CustomAction<T> {
+  icon?: ReactNode
+  label: string
+  onClick: (item: T) => void
+  variant?: 'primary' | 'secondary' | 'danger'
+  hidden?: (item: T) => boolean
+}
+
 interface DataTableProps<T> {
   data: T[]
   columns: Column<T>[]
   onView?: (item: T) => void
   onEdit?: (item: T) => void
   onDelete?: (item: T) => void
+  customActions?: CustomAction<T>[]
   loading?: boolean
   emptyMessage?: string
   pageSize?: number
@@ -30,6 +39,7 @@ export function DataTable<T extends { id: string }>({
   onView,
   onEdit,
   onDelete,
+  customActions,
   loading = false,
   emptyMessage = 'No data available',
   pageSize = 10,
@@ -125,7 +135,7 @@ export function DataTable<T extends { id: string }>({
                   {column.header}
                 </th>
               ))}
-              {(onView || onEdit || onDelete) && (
+              {(onView || onEdit || onDelete || customActions?.length) && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Actions
                 </th>
@@ -143,7 +153,7 @@ export function DataTable<T extends { id: string }>({
                     }
                   </td>
                 ))}
-                {(onView || onEdit || onDelete) && (
+                {(onView || onEdit || onDelete || customActions?.length) && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
                       {onView && (
@@ -173,6 +183,28 @@ export function DataTable<T extends { id: string }>({
                           Delete
                         </Button>
                       )}
+                      {customActions?.map((action, index) => {
+                        const isHidden = action.hidden?.(item)
+                        if (isHidden) return null
+                        return (
+                          <Button
+                            key={index}
+                            variant={action.variant ?? 'secondary'}
+                            size="sm"
+                            onClick={() => action.onClick(item)}
+                            title={action.label}
+                          >
+                            {action.icon ? (
+                              <span className="flex items-center gap-1">
+                                {action.icon}
+                                {action.label && <span>{action.label}</span>}
+                              </span>
+                            ) : (
+                              action.label
+                            )}
+                          </Button>
+                        )
+                      })}
                     </div>
                   </td>
                 )}
