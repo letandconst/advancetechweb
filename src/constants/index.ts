@@ -27,6 +27,7 @@ export const ROUTES = {
   JOB_ORDERS_NEW: '/job-orders/new',
   JOB_ORDERS_EDIT: '/job-orders/:id/edit',
   MECHANICS: '/mechanics',
+  USERS: '/users',
   SERVICES: '/services',
   INVENTORY: '/inventory',
   REPORTS: '/reports',

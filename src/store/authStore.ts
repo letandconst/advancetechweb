@@ -14,9 +14,11 @@ export interface UserProfile {
 interface AuthState {
   user: UserProfile | null
   isLoading: boolean
+  hasInitialized: boolean
   error: string | null
   setUser: (user: UserProfile | null) => void
   setLoading: (loading: boolean) => void
+  setInitialized: (initialized: boolean) => void
   setError: (message: string | null) => void
   clearAuth: () => void
 }
@@ -24,9 +26,11 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
+  hasInitialized: false,
   error: null,
   setUser: (user) => set({ user }),
   setLoading: (isLoading) => set({ isLoading }),
+  setInitialized: (hasInitialized) => set({ hasInitialized }),
   setError: (error) => set({ error }),
   clearAuth: () => set({ user: null, error: null })
 }))

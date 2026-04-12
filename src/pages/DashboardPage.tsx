@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Clock,
   Users,
+  Gauge,
 } from 'lucide-react'
 import { Button, LoadingSpinner } from '../components'
 import { ROUTES } from '../constants'
@@ -31,8 +32,8 @@ function formatPhpCurrency(value: number) {
 
 function statusTone(status: string) {
   if (status === 'completed') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
-  if (status === 'in_progress') return 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
-  if (status === 'cancelled') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  if (status === 'in_progress') return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300'
+  if (status === 'cancelled') return 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
   return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
 }
 
@@ -48,7 +49,7 @@ function timeAgo(dateString: string) {
 }
 
 function stockTone(amount: number) {
-  if (amount === 0) return 'text-red-600 dark:text-red-400'
+  if (amount === 0) return 'text-sky-600 dark:text-sky-400'
   if (amount <= 3) return 'text-orange-600 dark:text-orange-400'
   return 'text-amber-600 dark:text-amber-400'
 }
@@ -79,16 +80,23 @@ export function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.15),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
+      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.12),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">
-              {today}
-            </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
-              {greeting}{user?.first_name ? `, ${user.first_name}` : ''}!
-            </h1>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+                <Gauge className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">
+                  {today}
+                </p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+                  {greeting}{user?.first_name ? `, ${user.first_name}` : ''}!
+                </h1>
+              </div>
+            </div>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
               Here's what's happening at the shop today.
             </p>
           </div>
@@ -118,7 +126,7 @@ export function DashboardPage() {
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Total Revenue */}
-            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Revenue</p>
                 <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -132,10 +140,10 @@ export function DashboardPage() {
             </div>
 
             {/* Active Jobs */}
-            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Jobs</p>
-                <Clock className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                <Clock className="h-4 w-4 text-sky-600 dark:text-sky-300" />
               </div>
               <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
                 {stats?.inProgressJobs ?? 0}
@@ -146,7 +154,7 @@ export function DashboardPage() {
             </div>
 
             {/* Completed Today */}
-            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Completed Today</p>
                 <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -158,10 +166,10 @@ export function DashboardPage() {
             </div>
 
             {/* Mechanics / Stock Alert */}
-            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+            <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Mechanics</p>
-                <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                <Users className="h-4 w-4 text-slate-700 dark:text-slate-300" />
               </div>
               <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
                 {stats?.activeMechanics ?? 0}
@@ -173,87 +181,92 @@ export function DashboardPage() {
         )}
       </section>
 
-      {/* Quick Actions + Alerts row */}
+      {/* Recent Job Orders + Stock Alerts */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Quick Actions */}
-        <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-          <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Quick Actions</h2>
-          <div className="space-y-2">
-            {isAdmin() && (
-              <button
-                onClick={() => navigate(ROUTES.JOB_ORDERS_NEW)}
-                className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
-              >
-                <ClipboardList className="h-5 w-5 flex-shrink-0 text-sky-600 dark:text-sky-400" />
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Create Job Order</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Start a new customer job</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-400" />
-              </button>
-            )}
-            <button
-              onClick={() => navigate(ROUTES.JOB_ORDERS)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
-            >
-              <TrendingUp className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">View Job Orders</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Manage all job orders</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-            <button
-              onClick={() => navigate(ROUTES.MECHANICS)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
-            >
-              <Wrench className="h-5 w-5 flex-shrink-0 text-violet-600 dark:text-violet-400" />
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Mechanics</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">View and manage mechanics</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-            <button
-              onClick={() => navigate(ROUTES.INVENTORY)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
-            >
-              <Package className="h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Inventory</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Check stock and restock items</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-            <button
-              onClick={() => navigate(ROUTES.SERVICES)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
-            >
-              <Car className="h-5 w-5 flex-shrink-0 text-rose-600 dark:text-rose-400" />
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Services</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Manage offered services</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-            {isAdmin() && (
-              <button
-                onClick={() => navigate(ROUTES.SETTINGS)}
-                className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
-              >
-                <Settings className="h-5 w-5 flex-shrink-0 text-slate-500 dark:text-slate-400" />
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Settings</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Configure system settings</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-400" />
-              </button>
-            )}
+        {/* Recent Job Orders */}
+        <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90 lg:col-span-2">
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-sky-600 dark:text-sky-300" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent Job Orders</h2>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => navigate(ROUTES.JOB_ORDERS)}>
+              View all
+            </Button>
           </div>
+
+          {jobsLoading ? (
+            <div className="flex justify-center py-8"><LoadingSpinner /></div>
+          ) : (recentJobs ?? []).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <ClipboardList className="mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">No job orders yet</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {isAdmin() ? 'Create your first job order to get started.' : 'Job orders will appear here once created.'}
+              </p>
+              {isAdmin() && (
+                <Button className="mt-4 gap-2" size="sm" onClick={() => navigate(ROUTES.JOB_ORDERS_NEW)}>
+                  <Plus className="h-4 w-4" />
+                  Create job order
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">JO Code</th>
+                    <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Customer</th>
+                    <th className="hidden pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 md:table-cell dark:text-slate-400">Mechanic</th>
+                    <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</th>
+                    <th className="pb-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</th>
+                    <th className="hidden pb-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 sm:table-cell dark:text-slate-400">Updated</th>
+                    <th className="pb-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {(recentJobs ?? []).map((job) => (
+                    <tr key={job.id} className="group">
+                      <td className="py-3 pr-4">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{job.job_order_code}</span>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{job.customer_name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{job.vehicle_make} • {job.plate_number}</p>
+                      </td>
+                      <td className="hidden py-3 pr-4 md:table-cell">
+                        <p className="text-sm text-slate-700 dark:text-slate-300">{job.mechanic_name ?? 'Unassigned'}</p>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(job.status)}`}>
+                          {job.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-right">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatPhpCurrency(job.total)}</span>
+                      </td>
+                      <td className="hidden py-3 pr-4 text-right sm:table-cell">
+                        <span className="text-xs text-slate-400">{timeAgo(job.updated_at)}</span>
+                      </td>
+                      <td className="py-3">
+                        <button
+                          onClick={() => navigate(`/job-orders/${job.id}/edit`)}
+                          className="rounded-lg p-1.5 text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         {/* Low Stock Alert */}
-        <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90 lg:col-span-2">
+        <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-[0_20px_40px_-30px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -261,7 +274,7 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               {(stats?.outOfStockCount ?? 0) > 0 && (
-                <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
                   {stats?.outOfStockCount} out of stock
                 </span>
               )}
@@ -277,16 +290,16 @@ export function DashboardPage() {
           </div>
 
           {stockLoading ? (
-            <div className="flex justify-center py-8"><LoadingSpinner /></div>
+            <div className="flex justify-center py-6"><LoadingSpinner /></div>
           ) : (lowStockItems ?? []).length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <CheckCircle className="mb-3 h-8 w-8 text-emerald-500" />
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <CheckCircle className="mb-2 h-7 w-7 text-emerald-500" />
               <p className="text-sm font-medium text-slate-700 dark:text-slate-200">All items are well stocked!</p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">No low stock or out-of-stock items.</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {(lowStockItems ?? []).map((item) => (
+              {(lowStockItems ?? []).slice(0, 5).map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{item.name}</p>
@@ -304,87 +317,84 @@ export function DashboardPage() {
         </section>
       </div>
 
-      {/* Recent Job Orders */}
+      {/* Quick Actions */}
       <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent Job Orders</h2>
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => navigate(ROUTES.JOB_ORDERS)}>
-            View all
-          </Button>
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Quick Actions</h2>
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {isAdmin() && (
+            <button
+              onClick={() => navigate(ROUTES.JOB_ORDERS_NEW)}
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
+            >
+              <ClipboardList className="h-5 w-5 flex-shrink-0 text-sky-600 dark:text-sky-300" />
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Create Job Order</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Start a new customer job</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </button>
+          )}
+          <button
+            onClick={() => navigate(ROUTES.JOB_ORDERS)}
+            className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
+          >
+            <TrendingUp className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">View Job Orders</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Manage all job orders</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-400" />
+          </button>
+          <button
+            onClick={() => navigate(ROUTES.MECHANICS)}
+            className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
+          >
+            <Wrench className="h-5 w-5 flex-shrink-0 text-slate-700 dark:text-slate-300" />
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Mechanics</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">View and manage mechanics</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-400" />
+          </button>
+          <button
+            onClick={() => navigate(ROUTES.INVENTORY)}
+            className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
+          >
+            <Package className="h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Inventory</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Check stock and restock items</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-400" />
+          </button>
+          <button
+            onClick={() => navigate(ROUTES.SERVICES)}
+            className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
+          >
+            <Car className="h-5 w-5 flex-shrink-0 text-rose-600 dark:text-rose-400" />
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Services</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Manage offered services</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-400" />
+          </button>
+          {isAdmin() && (
+            <button
+              onClick={() => navigate(ROUTES.SETTINGS)}
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
+            >
+              <Settings className="h-5 w-5 flex-shrink-0 text-slate-500 dark:text-slate-400" />
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Settings</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Configure system settings</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </button>
+          )}
         </div>
-
-        {jobsLoading ? (
-          <div className="flex justify-center py-8"><LoadingSpinner /></div>
-        ) : (recentJobs ?? []).length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <ClipboardList className="mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">No job orders yet</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {isAdmin() ? 'Create your first job order to get started.' : 'Job orders will appear here once created.'}
-            </p>
-            {isAdmin() && (
-              <Button className="mt-4 gap-2" size="sm" onClick={() => navigate(ROUTES.JOB_ORDERS_NEW)}>
-                <Plus className="h-4 w-4" />
-                Create job order
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">JO Code</th>
-                  <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Customer</th>
-                  <th className="hidden pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 md:table-cell dark:text-slate-400">Mechanic</th>
-                  <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</th>
-                  <th className="pb-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</th>
-                  <th className="hidden pb-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 sm:table-cell dark:text-slate-400">Updated</th>
-                  <th className="pb-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {(recentJobs ?? []).map((job) => (
-                  <tr key={job.id} className="group">
-                    <td className="py-3 pr-4">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{job.job_order_code}</span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{job.customer_name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{job.vehicle_make} • {job.plate_number}</p>
-                    </td>
-                    <td className="hidden py-3 pr-4 md:table-cell">
-                      <p className="text-sm text-slate-700 dark:text-slate-300">{job.mechanic_name ?? 'Unassigned'}</p>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(job.status)}`}>
-                        {job.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-right">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatPhpCurrency(job.total)}</span>
-                    </td>
-                    <td className="hidden py-3 pr-4 text-right sm:table-cell">
-                      <span className="text-xs text-slate-400">{timeAgo(job.updated_at)}</span>
-                    </td>
-                    <td className="py-3">
-                      <button
-                        onClick={() => navigate(`/job-orders/${job.id}/edit`)}
-                        className="rounded-lg p-1.5 text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </section>
     </div>
   )
 }
+
+

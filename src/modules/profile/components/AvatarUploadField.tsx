@@ -130,7 +130,7 @@ export function AvatarUploadField({
                 <button
                   type="button"
                   onClick={handleRemoveAvatar}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-sky-600 transition hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/30"
                   role="menuitem"
                 >
                   <X className="h-4 w-4" />
@@ -231,3 +231,4 @@ export function AvatarUploadField({
     </div>
   )
 }
+

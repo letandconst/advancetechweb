@@ -108,7 +108,7 @@ export function DataTable<T extends { id: string }>({
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
       </div>
     )
   }
@@ -144,7 +144,7 @@ export function DataTable<T extends { id: string }>({
           </thead>
           <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
             {paginatedData.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/70">
+              <tr key={item.id} className="transition-colors duration-200 hover:bg-sky-50/60 dark:hover:bg-sky-950/20">
                 {columns.map((column) => (
                   <td key={String(column.key)} className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                     {column.render
@@ -217,7 +217,7 @@ export function DataTable<T extends { id: string }>({
       {enablePagination && (
         <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            Showing {startItem}-{endItem} of {data.length}
+            Showing {startItem}-{endItem} of {totalCount}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -247,3 +247,4 @@ export function DataTable<T extends { id: string }>({
     </div>
   )
 }
+

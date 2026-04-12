@@ -107,7 +107,7 @@ function MechanicAvatar({ path, name }: { path: string | null; name: string }) {
       onError={() => setUrl(null)}
     />
   ) : (
-    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
       {initials || 'M'}
     </div>
   )
@@ -133,7 +133,7 @@ export function MechanicsPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <AlertCircle className="mx-auto h-12 w-12 text-sky-500 mb-4" />
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
             Access Denied
           </h3>
@@ -171,7 +171,7 @@ export function MechanicsPage() {
         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
           value === 'active'
             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+            : 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200'
         }`}>
           {value}
         </span>
@@ -245,7 +245,7 @@ export function MechanicsPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <AlertCircle className="mx-auto h-12 w-12 text-sky-500 mb-4" />
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
             Error Loading Mechanics
           </h3>
@@ -259,11 +259,18 @@ export function MechanicsPage() {
 
   return (
     <div className="space-y-8">
-      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.15),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
+      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.12),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop team</p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Mechanics management</h1>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+                <Users className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop team</p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Mechanics management</h1>
+              </div>
+            </div>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Keep your mechanic roster current without losing context. Add and edit staff from a modal while the team table stays in view.</p>
           </div>
           <Button onClick={handleCreate} className="gap-2 self-start lg:self-auto">
@@ -273,21 +280,21 @@ export function MechanicsPage() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-              <Users className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+              <Users className="h-4 w-4 text-sky-600 dark:text-sky-300" />
               Total mechanics
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{totalMechanics}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <Wrench className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               Active now
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{activeMechanics}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               Inactive
@@ -363,3 +370,4 @@ export function MechanicsPage() {
     </div>
   )
 }
+

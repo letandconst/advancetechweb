@@ -34,7 +34,7 @@ export function ServiceForm({ initialData, onSubmit, onCancel, loading = false }
 
   const inputClassName = 'w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950'
   const normalBorderClassName = 'border-slate-200 dark:border-slate-800'
-  const errorBorderClassName = 'border-red-400 focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-950'
+  const errorBorderClassName = 'border-sky-400 focus:border-sky-400 focus:ring-sky-100 dark:focus:ring-sky-950'
 
   function validateForm(): boolean {
     const newErrors: Partial<Record<keyof ServiceFormData, string>> = {}
@@ -166,3 +166,4 @@ export function ServiceForm({ initialData, onSubmit, onCancel, loading = false }
     </form>
   )
 }
+

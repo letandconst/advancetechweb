@@ -311,7 +311,7 @@ export function JobOrderForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {errors.length > 0 && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-200">
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-700 dark:border-sky-900/30 dark:bg-sky-900/10 dark:text-sky-200">
           <p className="font-semibold">Please check the following:</p>
           <ul className="mt-2 list-disc pl-5">
             {errors.map((error) => (
@@ -551,3 +551,4 @@ export function JobOrderForm({
     </form>
   )
 }
+

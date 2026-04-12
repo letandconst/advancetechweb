@@ -75,9 +75,11 @@ async function fetchUserProfile(userId: string, email?: string) {
 export function useAuth() {
   const user = useAuthStore((state) => state.user)
   const isLoading = useAuthStore((state) => state.isLoading)
+  const hasInitialized = useAuthStore((state) => state.hasInitialized)
   const error = useAuthStore((state) => state.error)
   const setUser = useAuthStore((state) => state.setUser)
   const setLoading = useAuthStore((state) => state.setLoading)
+  const setInitialized = useAuthStore((state) => state.setInitialized)
   const setError = useAuthStore((state) => state.setError)
   const clearAuth = useAuthStore((state) => state.clearAuth)
 
@@ -104,6 +106,11 @@ export function useAuth() {
   }
 
   useEffect(() => {
+    if (hasInitialized) {
+      return
+    }
+
+    setInitialized(true)
     setLoading(true)
 
     supabase.auth.getSession().then(({ data }) => {
@@ -117,7 +124,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [])
+  }, [hasInitialized, setInitialized])
 
   async function login(username: string, password: string) {
     setLoading(true)

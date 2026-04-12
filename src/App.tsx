@@ -1,5 +1,7 @@
+import { ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
+import { LoadingSpinner } from './components/LoadingSpinner'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { JobOrdersPage } from './pages/JobOrdersPage'
@@ -9,8 +11,24 @@ import { ServicesPage } from './pages/ServicesPage'
 import { InventoryPage } from './pages/InventoryPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import { ProfilePage } from './modules/profile'
+import { ProfilePage } from './pages/ProfilePage'
+import { UsersPage } from './pages'
 import { ROUTES } from './constants'
+import { useAuth } from './hooks'
+
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading..." overlay />
+  }
+
+  if (!user) {
+    return <Navigate to={ROUTES.LOGIN} replace />
+  }
+
+  return <>{children}</>
+}
 
 function App() {
   return (
@@ -20,81 +38,111 @@ function App() {
         <Route
           path={ROUTES.DASHBOARD}
           element={
-            <Layout>
-              <DashboardPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <DashboardPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS}
           element={
-            <Layout>
-              <JobOrdersPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <JobOrdersPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS_NEW}
           element={
-            <Layout>
-              <JobOrderFormPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <JobOrderFormPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS_EDIT}
           element={
-            <Layout>
-              <JobOrderFormPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <JobOrderFormPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.MECHANICS}
           element={
-            <Layout>
-              <MechanicsPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <MechanicsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.USERS}
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <UsersPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.SERVICES}
           element={
-            <Layout>
-              <ServicesPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <ServicesPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.INVENTORY}
           element={
-            <Layout>
-              <InventoryPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <InventoryPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.REPORTS}
           element={
-            <Layout>
-              <ReportsPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <ReportsPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.SETTINGS}
           element={
-            <Layout>
-              <SettingsPage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <SettingsPage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path={ROUTES.PROFILE}
           element={
-            <Layout>
-              <ProfilePage />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <ProfilePage />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />

@@ -160,7 +160,7 @@ export function SignupPage({ onSignup, onSwitch, error, isLoading }: SignupPageP
         </label>
 
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+          <div className="rounded-lg bg-sky-50 px-4 py-3 text-sm text-sky-700 dark:bg-sky-900/20 dark:text-sky-400">
             {error}
           </div>
         )}
@@ -179,3 +179,5 @@ export function SignupPage({ onSignup, onSwitch, error, isLoading }: SignupPageP
     </div>
   )
 }
+
+

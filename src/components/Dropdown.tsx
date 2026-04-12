@@ -28,7 +28,7 @@ export function Dropdown({ trigger, children, align = 'right' }: DropdownProps) 
           />
           <div
             className={cn(
-              'absolute top-full z-20 mt-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900',
+              'absolute top-full z-20 mt-2 min-w-[240px] rounded-2xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900',
               align === 'left' ? 'left-0' : 'right-0'
             )}
           >
@@ -43,16 +43,20 @@ export function Dropdown({ trigger, children, align = 'right' }: DropdownProps) 
 interface DropdownItemProps {
   children: ReactNode
   onClick?: () => void
+  icon?: ReactNode
 }
 
-export function DropdownItem({ children, onClick }: DropdownItemProps) {
+export function DropdownItem({ children, onClick, icon }: DropdownItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-slate-700 transition-colors duration-200 hover:bg-sky-50 hover:text-sky-700 dark:text-slate-200 dark:hover:bg-sky-950/30 dark:hover:text-sky-300"
     >
+      {icon && <span className="flex-shrink-0 opacity-60">{icon}</span>}
       {children}
     </button>
   )
 }
+
+

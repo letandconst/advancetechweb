@@ -17,7 +17,7 @@ function formatPhpCurrency(value: number) {
 
 function statusTone(status: JobOrder['status']) {
   if (status === 'completed') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
-  if (status === 'in_progress') return 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
+  if (status === 'in_progress') return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300'
   if (status === 'cancelled') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
   return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
 }
@@ -143,7 +143,7 @@ export function JobOrdersPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-sky-500" />
           <h3 className="mb-2 text-lg font-medium text-slate-900 dark:text-slate-100">Error Loading Job Orders</h3>
           <p className="text-slate-600 dark:text-slate-400">{error.message}</p>
         </div>
@@ -153,11 +153,18 @@ export function JobOrdersPage() {
 
   return (
     <div className="space-y-8">
-      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.15),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
+      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.12),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop flow</p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Job orders</h1>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+                <ClipboardList className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop flow</p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Job orders</h1>
+              </div>
+            </div>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Create and track customer jobs, labor, parts, and oils from one operational board.</p>
           </div>
           {isAdmin() && (
@@ -169,21 +176,21 @@ export function JobOrdersPage() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-              <ClipboardList className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+              <ClipboardList className="h-4 w-4 text-sky-600 dark:text-sky-300" />
               Total job orders
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{totalItems}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               In progress (page)
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{inProgressCount}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               Completed (page)
@@ -292,3 +299,4 @@ export function JobOrdersPage() {
     </div>
   )
 }
+

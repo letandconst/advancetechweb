@@ -25,7 +25,7 @@ function formatPhpCurrency(value: number) {
 
 function stockToneClass(amount: number) {
   if (amount === 0) {
-    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+    return 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
   }
 
   if (amount <= LOW_STOCK_THRESHOLD) {
@@ -105,7 +105,7 @@ function InventoryViewPanel({
                   const value = Number(event.target.value)
                   setQuantity(Number.isNaN(value) || value < 1 ? 1 : Math.floor(value))
                 }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-orange-500 dark:focus:ring-orange-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               />
             </div>
 
@@ -316,8 +316,15 @@ export function InventoryPage() {
       <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.14),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.25),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-700 dark:text-orange-300">Parts and supplies</p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Inventory management</h1>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+                <Package className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Parts and supplies</p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Inventory management</h1>
+              </div>
+            </div>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Track parts availability, avoid stockouts, and keep your auto repair operations running smoothly.</p>
           </div>
           {isAdmin() && (
@@ -329,23 +336,23 @@ export function InventoryPage() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <Boxes className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               Total items
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{totalItems}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               Low stock on page
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{lowStockCount}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-              <Package className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <Package className="h-4 w-4 text-sky-600 dark:text-sky-400" />
               Out of stock on page
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{outOfStockCount}</p>
@@ -377,7 +384,7 @@ export function InventoryPage() {
                 value={filters.search ?? ''}
                 onChange={(event) => handleFilterChange('search', event.target.value)}
                 placeholder="Search item name, description, or category"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-orange-500 dark:focus:ring-orange-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               />
             </div>
 
@@ -386,7 +393,7 @@ export function InventoryPage() {
               <select
                 value={filters.category ?? 'all'}
                 onChange={(event) => handleFilterChange('category', event.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-orange-500 dark:focus:ring-orange-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               >
                 <option value="all">All categories</option>
                 {INVENTORY_CATEGORIES.map((category) => (
@@ -400,7 +407,7 @@ export function InventoryPage() {
               <select
                 value={filters.stockState ?? 'all'}
                 onChange={(event) => handleFilterChange('stockState', event.target.value as InventoryFilters['stockState'])}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-orange-500 dark:focus:ring-orange-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               >
                 <option value="all">All stock states</option>
                 <option value="in-stock">In stock</option>
@@ -479,3 +486,4 @@ export function InventoryPage() {
     </div>
   )
 }
+

@@ -202,7 +202,7 @@ export function ServicesPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-sky-500" />
           <h3 className="mb-2 text-lg font-medium text-slate-900 dark:text-slate-100">Error Loading Services</h3>
           <p className="text-slate-600 dark:text-slate-400">{error.message}</p>
         </div>
@@ -215,8 +215,15 @@ export function ServicesPage() {
       <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.13),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.2),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-700 dark:text-emerald-300">Workshop catalog</p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Services management</h1>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+                <Wrench className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop catalog</p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Services management</h1>
+              </div>
+            </div>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Maintain pricing for standard specialization work and ad hoc repair services in one module.</p>
           </div>
           {isAdmin() && (
@@ -228,21 +235,21 @@ export function ServicesPage() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-              <Wrench className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <Wrench className="h-4 w-4 text-sky-600 dark:text-sky-300" />
               Total services
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{totalServices}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-              <Sparkles className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+              <Sparkles className="h-4 w-4 text-sky-600 dark:text-sky-300" />
               Active on page
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{activeServices}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
+          <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
               <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               Inactive (filtered)
@@ -276,7 +283,7 @@ export function ServicesPage() {
                 value={filters.search ?? ''}
                 onChange={(event) => handleFilterChange('search', event.target.value)}
                 placeholder="Search service name or description"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               />
             </div>
 
@@ -285,7 +292,7 @@ export function ServicesPage() {
               <select
                 value={filters.status ?? 'all'}
                 onChange={(event) => handleFilterChange('status', event.target.value as ServiceFilters['status'])}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               >
                 <option value="all">All</option>
                 <option value="active">Active</option>
@@ -305,7 +312,7 @@ export function ServicesPage() {
                   handleFilterChange('minPrice', value === '' ? null : Number(value))
                 }}
                 placeholder="0.00"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               />
             </div>
 
@@ -321,7 +328,7 @@ export function ServicesPage() {
                   handleFilterChange('maxPrice', value === '' ? null : Number(value))
                 }}
                 placeholder="0.00"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               />
             </div>
           </div>
@@ -389,3 +396,4 @@ export function ServicesPage() {
     </div>
   )
 }
+

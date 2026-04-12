@@ -1,4 +1,4 @@
-import { ArrowLeft, AlertCircle } from 'lucide-react'
+import { ArrowLeft, AlertCircle, ClipboardList } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, LoadingSpinner } from '../components'
 import { ROUTES } from '../constants'
@@ -90,7 +90,7 @@ export function JobOrderFormPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-sky-500" />
           <h3 className="mb-2 text-lg font-medium text-slate-900 dark:text-slate-100">Unable to open job order form</h3>
           <p className="text-slate-600 dark:text-slate-400">{(codeError || jobOrderError)?.message}</p>
           <Button className="mt-4" onClick={() => navigate(ROUTES.JOB_ORDERS)}>Back to Job Orders</Button>
@@ -112,11 +112,18 @@ export function JobOrderFormPage() {
         </Button>
       </div>
 
-      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop operations</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
-          {isEditMode ? 'Edit job order' : 'Create job order'}
-        </h1>
+      <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.10),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+            <ClipboardList className="h-7 w-7" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop operations</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+              {isEditMode ? 'Edit job order' : 'Create job order'}
+            </h1>
+          </div>
+        </div>
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
           Fill in customer details, labor items, oils, and parts. Totals and discount are calculated automatically.
         </p>
@@ -138,3 +145,4 @@ export function JobOrderFormPage() {
     </div>
   )
 }
+

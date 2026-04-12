@@ -64,6 +64,7 @@ export type InventoryLog = {
   quantity_after: number
   reference_type: InventoryLogReferenceType
   reference_id: string | null
+  reference_label: string | null
   notes: string | null
   created_by: string | null
   created_at: string

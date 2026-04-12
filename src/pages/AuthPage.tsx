@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { LoginPage, SignupPage, ForgotPasswordPage } from '../modules/auth'
+import { LoginPage, ForgotPasswordPage } from '../modules/auth'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { useAuth } from '../hooks'
 import { supabase } from '../lib/supabase'
 
 export function AuthPage() {
-  const { user, isLoading, error, login, signup } = useAuth()
-  const [page, setPage] = useState<'login' | 'signup' | 'forgot-password'>('login')
+  const { user, isLoading, error, login } = useAuth()
+  const [page, setPage] = useState<'login' | 'forgot-password'>('login')
   const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false)
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
   const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null)
@@ -50,7 +50,6 @@ export function AuthPage() {
         {page === 'login' ? (
           <LoginPage 
             onLogin={login} 
-            onSwitch={() => setPage('signup')} 
             onForgotPassword={() => {
               setPage('forgot-password')
               setForgotPasswordSuccess(false)
@@ -59,8 +58,6 @@ export function AuthPage() {
             error={error} 
             isLoading={isLoading} 
           />
-        ) : page === 'signup' ? (
-          <SignupPage onSignup={signup} onSwitch={() => setPage('login')} error={error} isLoading={isLoading} />
         ) : (
           <ForgotPasswordPage 
             onReset={handleForgotPassword}

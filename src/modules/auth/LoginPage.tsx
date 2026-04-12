@@ -4,13 +4,12 @@ import { Button } from '../../components'
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => Promise<void>
-  onSwitch: () => void
   onForgotPassword: () => void
   error?: string | null
   isLoading: boolean
 }
 
-export function LoginPage({ onLogin, onSwitch, onForgotPassword, error, isLoading }: LoginPageProps) {
+export function LoginPage({ onLogin, onForgotPassword, error, isLoading }: LoginPageProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -103,7 +102,7 @@ export function LoginPage({ onLogin, onSwitch, onForgotPassword, error, isLoadin
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+          <div className="rounded-lg bg-sky-50 px-4 py-3 text-sm text-sky-700 dark:bg-sky-900/20 dark:text-sky-400">
             {error}
           </div>
         )}
@@ -113,12 +112,11 @@ export function LoginPage({ onLogin, onSwitch, onForgotPassword, error, isLoadin
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-        Don't have an account?{' '}
-        <button type="button" className="font-semibold text-sky-600 transition hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300" onClick={onSwitch}>
-          Sign up
-        </button>
+      <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+        Account access is managed by your administrator.
       </p>
     </div>
   )
 }
+
+
