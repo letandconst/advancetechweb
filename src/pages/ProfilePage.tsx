@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle } from 'lucide-react'
-import { Button } from '../components/Button'
+import { Button } from '../components'
 import { AvatarBadge } from '../components/AvatarBadge'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { useAuth } from '../hooks'
@@ -92,7 +92,7 @@ export function ProfilePage() {
 
     try {
       if (selectedFile) {
-        const avatarUrl = await uploadImageToSupabase(selectedFile, user.id)
+        const avatarUrl = await uploadImageToSupabase(selectedFile)
         await updateProfile({
           avatar_url: avatarUrl
         })
