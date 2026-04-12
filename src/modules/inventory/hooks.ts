@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { LOW_STOCK_THRESHOLD } from '../../constants'
+import { useAppSettings } from '../settings'
 import { InventoryFormData, InventoryItem, InventoryLog } from './types'
 
 export interface InventoryFilters {
@@ -23,12 +23,13 @@ export interface InventoryListResult {
 }
 
 export function useInventory(params: InventoryListParams = {}) {
+  const { settings } = useAppSettings()
   const page = Math.max(params.page ?? 1, 1)
   const pageSize = Math.max(params.pageSize ?? 10, 1)
   const filters = params.filters ?? {}
 
   return useQuery({
-    queryKey: ['inventory', { page, pageSize, filters }],
+    queryKey: ['inventory', { page, pageSize, filters, lowStockThreshold: settings.lowStockThreshold }],
     queryFn: async () => {
       const from = (page - 1) * pageSize
       const to = from + pageSize - 1
@@ -52,7 +53,7 @@ export function useInventory(params: InventoryListParams = {}) {
       if (filters.stockState === 'out-of-stock') {
         query = query.eq('amount', 0)
       } else if (filters.stockState === 'low-stock') {
-        query = query.gt('amount', 0).lte('amount', LOW_STOCK_THRESHOLD)
+        query = query.gt('amount', 0).lte('amount', settings.lowStockThreshold)
       } else if (filters.stockState === 'in-stock') {
         query = query.gt('amount', 0)
       }

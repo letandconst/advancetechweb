@@ -1,6 +1,7 @@
 export const APP_NAME = 'Advanced Tech Web'
 export const STORAGE_KEYS = {
-  darkMode: 'advanced-tech-dark-mode'
+  darkMode: 'advanced-tech-dark-mode',
+  appSettings: 'advanced-tech-app-settings'
 } as const
 
 export const STORAGE_BUCKETS = {

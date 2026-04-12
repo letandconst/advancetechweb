@@ -39,9 +39,12 @@ function formatRangeLabel(date: Date, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat('en-PH', options).format(date)
 }
 
-export function createDefaultReportsFilters(now = new Date()): ReportsFilters {
+export function createDefaultReportsFilters(
+  now = new Date(),
+  defaultPeriod: ReportsPeriod = 'month'
+): ReportsFilters {
   return {
-    period: 'month',
+    period: defaultPeriod,
     day: formatDateInput(now),
     month: formatMonthInput(now),
     year: String(now.getFullYear()),

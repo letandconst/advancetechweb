@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CheckCircle, Package, Plus, ShieldAlert, Boxes, Search, Tag, ArrowUpCircle } from 'lucide-react'
 import { Button, DataTable, LoadingSpinner, Modal } from '../components'
-import { INVENTORY_CATEGORIES, LOW_STOCK_THRESHOLD } from '../constants'
+import { INVENTORY_CATEGORIES } from '../constants'
 import { useAuth } from '../hooks'
+import { useAppSettings } from '../modules/settings'
 import { InventoryForm } from '../modules/inventory/components/InventoryForm'
 import {
   InventoryFilters,
@@ -23,32 +24,34 @@ function formatPhpCurrency(value: number) {
   }).format(value)
 }
 
-function stockToneClass(amount: number) {
+function stockToneClass(amount: number, lowStockThreshold: number) {
   if (amount === 0) {
     return 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
   }
 
-  if (amount <= LOW_STOCK_THRESHOLD) {
+  if (amount <= lowStockThreshold) {
     return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
   }
 
   return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
 }
 
-function stockLabel(amount: number) {
+function stockLabel(amount: number, lowStockThreshold: number) {
   if (amount === 0) return 'Out of stock'
-  if (amount <= LOW_STOCK_THRESHOLD) return 'Low stock'
+  if (amount <= lowStockThreshold) return 'Low stock'
   return 'In stock'
 }
 
 function InventoryViewPanel({
   item,
+  lowStockThreshold,
   canManage,
   adjusting,
   onRestock,
   onClose,
 }: {
   item: InventoryItem
+  lowStockThreshold: number
   canManage: boolean
   adjusting: boolean
   onRestock: (quantity: number) => void
@@ -67,8 +70,8 @@ function InventoryViewPanel({
             <p className="text-lg font-semibold text-slate-900 dark:text-white">{item.name}</p>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{item.category}</p>
           </div>
-          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${stockToneClass(item.amount)}`}>
-            {stockLabel(item.amount)}
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${stockToneClass(item.amount, lowStockThreshold)}`}>
+            {stockLabel(item.amount, lowStockThreshold)}
           </span>
         </div>
       </div>
@@ -133,6 +136,7 @@ function InventoryViewPanel({
 
 export function InventoryPage() {
   const { isAdmin } = useAuth()
+  const { settings } = useAppSettings()
 
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
@@ -155,7 +159,7 @@ export function InventoryPage() {
 
   const items = inventoryResult?.items ?? []
   const totalItems = inventoryResult?.totalCount ?? 0
-  const lowStockCount = items.filter((item) => item.amount > 0 && item.amount <= LOW_STOCK_THRESHOLD).length
+  const lowStockCount = items.filter((item) => item.amount > 0 && item.amount <= settings.lowStockThreshold).length
   const outOfStockCount = items.filter((item) => item.amount === 0).length
 
   const hasActiveFilters = useMemo(() => {
@@ -201,8 +205,8 @@ export function InventoryPage() {
       render: (value: number) => (
         <div className="flex items-center gap-2">
           <span className="font-semibold">{value}</span>
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${stockToneClass(value)}`}>
-            {stockLabel(value)}
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${stockToneClass(value, settings.lowStockThreshold)}`}>
+            {stockLabel(value, settings.lowStockThreshold)}
           </span>
         </div>
       ),
@@ -349,6 +353,7 @@ export function InventoryPage() {
               Low stock on page
             </div>
             <p className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">{lowStockCount}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Threshold: {settings.lowStockThreshold}</p>
           </div>
           <div className="rounded-[24px] border border-white/70 bg-white/70 p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/55">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -476,6 +481,7 @@ export function InventoryPage() {
         {viewingItem && (
           <InventoryViewPanel
             item={viewingItem}
+            lowStockThreshold={settings.lowStockThreshold}
             canManage={isAdmin()}
             adjusting={adjustStock.isPending}
             onRestock={handleRestock}

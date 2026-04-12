@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { LOW_STOCK_THRESHOLD } from '../constants'
+import { useAppSettings } from '../modules/settings'
 import { InventoryItem, JobOrder } from '../types'
 
 export interface DashboardStats {
@@ -17,8 +17,10 @@ export interface DashboardStats {
 }
 
 export function useDashboardStats() {
+  const { settings } = useAppSettings()
+
   return useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', settings.lowStockThreshold],
     queryFn: async () => {
       const today = new Date()
       const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
@@ -44,7 +46,7 @@ export function useDashboardStats() {
         supabase.from('job_orders').select('total').eq('status', 'completed').gte('updated_at', startOfMonth),
         supabase.from('mechanics').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('mechanics').select('*', { count: 'exact', head: true }),
-        supabase.from('inventory_items').select('*', { count: 'exact', head: true }).gt('amount', 0).lte('amount', LOW_STOCK_THRESHOLD),
+        supabase.from('inventory_items').select('*', { count: 'exact', head: true }).gt('amount', 0).lte('amount', settings.lowStockThreshold),
         supabase.from('inventory_items').select('*', { count: 'exact', head: true }).eq('amount', 0),
       ])
 
@@ -87,13 +89,15 @@ export function useRecentJobOrders() {
 }
 
 export function useLowStockItems() {
+  const { settings } = useAppSettings()
+
   return useQuery({
-    queryKey: ['dashboard-low-stock'],
+    queryKey: ['dashboard-low-stock', settings.lowStockThreshold],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items')
         .select('id, name, category, amount')
-        .lte('amount', LOW_STOCK_THRESHOLD)
+        .lte('amount', settings.lowStockThreshold)
         .order('amount', { ascending: true })
         .limit(5)
 

@@ -21,6 +21,7 @@ import {
   type ReportsStatusPoint,
   type ReportsTrendPoint,
 } from '../modules/reports'
+import { useAppSettings } from '../modules/settings'
 import { downloadCsv } from '../utils/csv'
 
 function formatPhpCurrency(value: number) {
@@ -349,7 +350,8 @@ function SectionCard({
 
 export function ReportsPage() {
   const navigate = useNavigate()
-  const [filters, setFilters] = useState<ReportsFilters>(() => createDefaultReportsFilters())
+  const { settings } = useAppSettings()
+  const [filters, setFilters] = useState<ReportsFilters>(() => createDefaultReportsFilters(new Date(), settings.reportsDefaultPeriod))
   const { data, isLoading, isFetching, error } = useReportsAnalytics(filters)
 
   const reportLabel = data?.range.label ?? 'Selected period'
