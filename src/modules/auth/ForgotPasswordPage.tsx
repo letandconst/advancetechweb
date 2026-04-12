@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Mail, ArrowLeft } from 'lucide-react'
-import { Button } from '../../components/Button'
+import { Button } from '../../components'
 
 interface ForgotPasswordPageProps {
   onReset: (email: string) => Promise<void>

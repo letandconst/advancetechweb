@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { LoginPage } from '../modules/auth/LoginPage';
-import { SignupPage } from '../modules/auth/SignupPage'
-import { ForgotPasswordPage } from '../modules/auth/ForgotPasswordPage'
+import { LoginPage, SignupPage, ForgotPasswordPage } from '../modules/auth'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { useAuth } from '../hooks'
 import { supabase } from '../lib/supabase'

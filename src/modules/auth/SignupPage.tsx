@@ -1,6 +1,6 @@
 import { FormEvent, useState, useEffect } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
-import { Button } from '../../components/Button'
+import { Button } from '../../components'
 
 interface SignupPageProps {
   onSignup: (
