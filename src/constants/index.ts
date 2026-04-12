@@ -42,3 +42,18 @@ export const SERVICE_SPECIALIZATIONS = [
   'Under Chassis',
   'Engine Scan'
 ] as const
+
+export const INVENTORY_CATEGORIES = [
+  'Engine Parts',
+  'Electrical',
+  'Fluids',
+  'Filters',
+  'Brakes',
+  'Suspension',
+  'Tires',
+  'Tools',
+  'Consumables',
+  'Other'
+] as const
+
+export const LOW_STOCK_THRESHOLD = 5

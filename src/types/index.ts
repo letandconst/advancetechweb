@@ -37,3 +37,16 @@ export type Service = {
 }
 
 export type ServiceFormData = Omit<Service, 'id' | 'created_at' | 'updated_at'>
+
+export type InventoryItem = {
+  id: string
+  name: string
+  description: string
+  price: number
+  amount: number
+  category: string
+  created_at: string
+  updated_at: string
+}
+
+export type InventoryFormData = Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>
