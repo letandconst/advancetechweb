@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { LOW_STOCK_THRESHOLD } from '../../constants'
-import { InventoryFormData, InventoryItem } from './types'
+import { InventoryFormData, InventoryItem, InventoryLog } from './types'
 
 export interface InventoryFilters {
   search?: string
@@ -138,13 +138,14 @@ export function useAdjustInventoryStock() {
     mutationFn: async ({ id, delta }: { id: string; delta: number }) => {
       const { data: current, error: fetchError } = await supabase
         .from('inventory_items')
-        .select('amount')
+        .select('id, amount, name')
         .eq('id', id)
         .single()
 
       if (fetchError) throw fetchError
 
-      const nextAmount = Math.max((current?.amount ?? 0) + delta, 0)
+      const currentAmount = current?.amount ?? 0
+      const nextAmount = Math.max(currentAmount + delta, 0)
 
       const { data, error } = await supabase
         .from('inventory_items')
@@ -154,10 +155,65 @@ export function useAdjustInventoryStock() {
         .single()
 
       if (error) throw error
+
+      // Log the restock/adjustment operation
+      const { error: logError } = await supabase
+        .from('inventory_logs')
+        .insert({
+          inventory_item_id: id,
+          inventory_item_name: current?.name ?? 'Unknown',
+          movement_type: 'restock',
+          quantity_changed: delta,
+          quantity_before: currentAmount,
+          quantity_after: nextAmount,
+          reference_type: 'manual',
+          reference_id: null,
+          notes: delta > 0 ? 'Manual restock' : 'Manual adjustment',
+        })
+
+      if (logError) throw logError
+
       return data as InventoryItem
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    },
+  })
+}
+
+export interface InventoryLogsParams {
+  inventoryItemId?: string
+  limit?: number
+  offset?: number
+}
+
+export function useInventoryLogs(params: InventoryLogsParams = {}) {
+  const limit = params.limit ?? 50
+  const offset = params.offset ?? 0
+
+  return useQuery({
+    queryKey: ['inventory-logs', { inventoryItemId: params.inventoryItemId, limit, offset }],
+    queryFn: async () => {
+      let query = supabase
+        .from('inventory_logs')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (params.inventoryItemId) {
+        query = query.eq('inventory_item_id', params.inventoryItemId)
+      }
+
+      const { data, error, count } = await query
+
+      if (error) throw error
+
+      return {
+        logs: (data ?? []) as InventoryLog[],
+        totalCount: count ?? 0,
+        limit,
+        offset,
+      }
     },
   })
 }
