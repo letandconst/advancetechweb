@@ -21,6 +21,19 @@ body {
   background-color: #f8fafc;
 }
 
+input,
+select,
+textarea {
+  border-radius: 0.625rem !important;
+}
+
+.rounded-\[32px\],
+.rounded-\[28px\],
+.rounded-\[24px\],
+.rounded-\[22px\] {
+  border-radius: 0.875rem !important;
+}
+
 .dark {
   color-scheme: dark;
   background-color: #020617;

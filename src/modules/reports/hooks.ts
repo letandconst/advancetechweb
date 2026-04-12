@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '../../lib/queryKeys'
 import { supabase } from '../../lib/supabase'
+import { ensureNoSupabaseError } from '../../lib/supabaseRequest'
 import { InventoryLog, JobOrder, JobOrderWorkItem } from '../../types'
 import {
   ReportsAnalyticsResult,
@@ -357,7 +359,7 @@ export function useReportsAnalytics(filters: ReportsFilters) {
   const recentMovementRange = createRecentInventoryMovementRange()
 
   return useQuery({
-    queryKey: ['reports-analytics', filters, range],
+    queryKey: queryKeys.reportsAnalytics(filters, range),
     queryFn: async () => {
       const [jobOrdersResult, inventoryLogsResult, recentInventoryLogsResult] = await Promise.all([
         supabase
@@ -380,9 +382,9 @@ export function useReportsAnalytics(filters: ReportsFilters) {
           .order('created_at', { ascending: true }),
       ])
 
-      if (jobOrdersResult.error) throw jobOrdersResult.error
-      if (inventoryLogsResult.error) throw inventoryLogsResult.error
-      if (recentInventoryLogsResult.error) throw recentInventoryLogsResult.error
+      ensureNoSupabaseError(jobOrdersResult, 'Failed to load job orders for reports')
+      ensureNoSupabaseError(inventoryLogsResult, 'Failed to load inventory logs for reports')
+      ensureNoSupabaseError(recentInventoryLogsResult, 'Failed to load recent inventory logs for reports')
 
       const jobOrders = normalizeJobOrders(jobOrdersResult.data ?? [])
       const inventoryLogs = normalizeInventoryLogs(inventoryLogsResult.data ?? [])
@@ -400,7 +402,9 @@ export function useReportsAnalytics(filters: ReportsFilters) {
           .select('id, job_order_code')
           .in('id', referenceIds)
 
-        if (referencedJobOrdersError) throw referencedJobOrdersError
+        if (referencedJobOrdersError) {
+          throw new Error(`Failed to resolve referenced job order labels: ${referencedJobOrdersError.message}`)
+        }
 
         ;((referencedJobOrders ?? []) as JobOrderReference[]).forEach((jobOrder) => {
           jobOrderCodeMap.set(jobOrder.id, jobOrder.job_order_code)

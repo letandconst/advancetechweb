@@ -48,7 +48,7 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
       nextErrors.price = 'Price must be a valid non-negative number'
     }
     if (!Number.isInteger(formData.amount) || formData.amount < 0) {
-      nextErrors.amount = 'Amount must be a whole number and cannot be negative'
+      nextErrors.amount = 'Quantity must be a whole number and cannot be negative'
     }
 
     setErrors(nextErrors)
@@ -126,7 +126,7 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Amount *</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Quantity *</label>
               <input
                 type="number"
                 min="0"

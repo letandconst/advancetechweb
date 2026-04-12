@@ -122,7 +122,7 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="rounded-[24px] border border-slate-200 dark:border-slate-800">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-800">

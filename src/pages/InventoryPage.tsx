@@ -87,7 +87,7 @@ function InventoryViewPanel({
       </div>
 
       <div>
-        <p className={labelClass}>Current amount</p>
+        <p className={labelClass}>Current quantity</p>
         <p className={fieldClass}>{item.amount} pcs</p>
       </div>
 
@@ -270,7 +270,7 @@ export function InventoryPage() {
     try {
       const updated = await adjustStock.mutateAsync({ id: viewingItem.id, delta: quantity })
       setViewingItem(updated)
-      setStatusMessage({ type: 'success', message: `${updated.name} restocked. Current amount: ${updated.amount}` })
+      setStatusMessage({ type: 'success', message: `${updated.name} restocked. Current quantity: ${updated.amount}` })
       setTimeout(() => setStatusMessage(null), 3000)
     } catch {
       setStatusMessage({ type: 'error', message: 'Failed to restock item' })
@@ -461,7 +461,7 @@ export function InventoryPage() {
         onClose={handleCancelForm}
         moduleLabel="Inventory"
         title={editingItem ? 'Edit inventory item' : 'Add inventory item'}
-        description={editingItem ? 'Update item details and stock amount.' : 'Create a new stock item for your shop inventory.'}
+        description={editingItem ? 'Update item details and stock quantity.' : 'Create a new stock item for your shop inventory.'}
       >
         <InventoryForm
           initialData={editingItem || undefined}

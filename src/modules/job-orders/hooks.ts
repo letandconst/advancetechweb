@@ -249,9 +249,17 @@ export function useCreateJobOrder() {
 
       return data as JobOrder
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['job-orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['job-order'] }),
+        queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+        queryClient.invalidateQueries({ queryKey: ['inventory-logs'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-recent-jobs'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-low-stock'] }),
+        queryClient.invalidateQueries({ queryKey: ['reports-analytics'] }),
+      ])
     },
   })
 }
@@ -284,10 +292,17 @@ export function useUpdateJobOrder() {
 
       return data as JobOrder
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['job-order'] })
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['job-orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['job-order'] }),
+        queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+        queryClient.invalidateQueries({ queryKey: ['inventory-logs'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-recent-jobs'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-low-stock'] }),
+        queryClient.invalidateQueries({ queryKey: ['reports-analytics'] }),
+      ])
     },
   })
 }
@@ -304,8 +319,14 @@ export function useDeleteJobOrder() {
 
       if (error) throw error
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-orders'] })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['job-orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['job-order'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-recent-jobs'] }),
+        queryClient.invalidateQueries({ queryKey: ['reports-analytics'] }),
+      ])
     },
   })
 }

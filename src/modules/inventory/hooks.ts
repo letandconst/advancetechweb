@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
+import { queryKeys } from '../../lib/queryKeys'
+import {
+  adjustInventoryStock,
+  createInventoryItem,
+  deleteInventoryItem,
+  listInventoryItems,
+  listInventoryLogs,
+  updateInventoryItem,
+} from './api'
 import { useAppSettings } from '../settings'
 import { InventoryFormData, InventoryItem, InventoryLog } from './types'
 
@@ -22,6 +30,17 @@ export interface InventoryListResult {
   pageSize: number
 }
 
+async function invalidateInventoryRelatedQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+    queryClient.invalidateQueries({ queryKey: ['inventory-logs'] }),
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] }),
+    queryClient.invalidateQueries({ queryKey: ['dashboard-low-stock'] }),
+    queryClient.invalidateQueries({ queryKey: ['reports-analytics'] }),
+    queryClient.invalidateQueries({ queryKey: ['job-orders'] }),
+  ])
+}
+
 export function useInventory(params: InventoryListParams = {}) {
   const { settings } = useAppSettings()
   const page = Math.max(params.page ?? 1, 1)
@@ -29,45 +48,16 @@ export function useInventory(params: InventoryListParams = {}) {
   const filters = params.filters ?? {}
 
   return useQuery({
-    queryKey: ['inventory', { page, pageSize, filters, lowStockThreshold: settings.lowStockThreshold }],
+    queryKey: queryKeys.inventory({ page, pageSize, filters, lowStockThreshold: settings.lowStockThreshold }),
     queryFn: async () => {
-      const from = (page - 1) * pageSize
-      const to = from + pageSize - 1
-
-      let query = supabase
-        .from('inventory_items')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to)
-
-      const search = filters.search?.trim()
-      if (search) {
-        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`)
-      }
-
-      const category = filters.category?.trim()
-      if (category && category !== 'all') {
-        query = query.eq('category', category)
-      }
-
-      if (filters.stockState === 'out-of-stock') {
-        query = query.eq('amount', 0)
-      } else if (filters.stockState === 'low-stock') {
-        query = query.gt('amount', 0).lte('amount', settings.lowStockThreshold)
-      } else if (filters.stockState === 'in-stock') {
-        query = query.gt('amount', 0)
-      }
-
-      const { data, error, count } = await query
-
-      if (error) throw error
-
-      return {
-        items: (data ?? []) as InventoryItem[],
-        totalCount: count ?? 0,
+      const result = await listInventoryItems({
         page,
         pageSize,
-      } as InventoryListResult
+        filters,
+        lowStockThreshold: settings.lowStockThreshold,
+      })
+
+      return result as InventoryListResult
     },
     placeholderData: (previousData) => previousData,
   })
@@ -77,18 +67,9 @@ export function useCreateInventoryItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (item: InventoryFormData) => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .insert(item)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as InventoryItem
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    mutationFn: createInventoryItem,
+    onSuccess: async () => {
+      await invalidateInventoryRelatedQueries(queryClient)
     },
   })
 }
@@ -97,19 +78,9 @@ export function useUpdateInventoryItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<InventoryFormData> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as InventoryItem
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    mutationFn: updateInventoryItem,
+    onSuccess: async () => {
+      await invalidateInventoryRelatedQueries(queryClient)
     },
   })
 }
@@ -118,16 +89,9 @@ export function useDeleteInventoryItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('inventory_items')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    mutationFn: deleteInventoryItem,
+    onSuccess: async () => {
+      await invalidateInventoryRelatedQueries(queryClient)
     },
   })
 }
@@ -136,48 +100,9 @@ export function useAdjustInventoryStock() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, delta }: { id: string; delta: number }) => {
-      const { data: current, error: fetchError } = await supabase
-        .from('inventory_items')
-        .select('id, amount, name')
-        .eq('id', id)
-        .single()
-
-      if (fetchError) throw fetchError
-
-      const currentAmount = current?.amount ?? 0
-      const nextAmount = Math.max(currentAmount + delta, 0)
-
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .update({ amount: nextAmount })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Log the restock/adjustment operation
-      const { error: logError } = await supabase
-        .from('inventory_logs')
-        .insert({
-          inventory_item_id: id,
-          inventory_item_name: current?.name ?? 'Unknown',
-          movement_type: 'restock',
-          quantity_changed: delta,
-          quantity_before: currentAmount,
-          quantity_after: nextAmount,
-          reference_type: 'manual',
-          reference_id: null,
-          notes: delta > 0 ? 'Manual restock' : 'Manual adjustment',
-        })
-
-      if (logError) throw logError
-
-      return data as InventoryItem
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    mutationFn: adjustInventoryStock,
+    onSuccess: async () => {
+      await invalidateInventoryRelatedQueries(queryClient)
     },
   })
 }
@@ -193,25 +118,17 @@ export function useInventoryLogs(params: InventoryLogsParams = {}) {
   const offset = params.offset ?? 0
 
   return useQuery({
-    queryKey: ['inventory-logs', { inventoryItemId: params.inventoryItemId, limit, offset }],
+    queryKey: queryKeys.inventoryLogs({ inventoryItemId: params.inventoryItemId, limit, offset }),
     queryFn: async () => {
-      let query = supabase
-        .from('inventory_logs')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1)
-
-      if (params.inventoryItemId) {
-        query = query.eq('inventory_item_id', params.inventoryItemId)
-      }
-
-      const { data, error, count } = await query
-
-      if (error) throw error
+      const result = await listInventoryLogs({
+        inventoryItemId: params.inventoryItemId,
+        limit,
+        offset,
+      })
 
       return {
-        logs: (data ?? []) as InventoryLog[],
-        totalCount: count ?? 0,
+        logs: result.logs as InventoryLog[],
+        totalCount: result.totalCount,
         limit,
         offset,
       }
