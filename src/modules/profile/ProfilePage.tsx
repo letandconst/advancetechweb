@@ -179,7 +179,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
+    <div className="mx-auto  space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <Button variant="secondary" className="w-full justify-center sm:w-auto" onClick={handleBackNavigation}>
           <span className="inline-flex items-center gap-2">
