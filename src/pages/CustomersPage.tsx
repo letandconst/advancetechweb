@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Car, CheckCircle, Plus, Users } from 'lucide-react'
 import { Button, DataTable, LoadingSpinner, Modal } from '../components'
@@ -16,6 +16,113 @@ import {
   useVehicleModels,
   type CustomerWithVehicles,
 } from '../modules/customers'
+
+const comboboxInputClassName =
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950 disabled:cursor-not-allowed disabled:opacity-50'
+
+function ComboboxInput({
+  value,
+  onChange,
+  onSelect,
+  options,
+  placeholder,
+  disabled,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onSelect: (value: string) => void
+  options: string[]
+  placeholder?: string
+  disabled?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setActiveIndex(-1)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [])
+
+  const filtered = useMemo(
+    () => options.filter((opt) => opt.toLowerCase().includes(value.toLowerCase())),
+    [options, value]
+  )
+
+  const showList = open && filtered.length > 0
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setOpen(true)
+      setActiveIndex((prev) => Math.min(prev + 1, filtered.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((prev) => Math.max(prev - 1, 0))
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && filtered[activeIndex]) {
+        e.preventDefault()
+        onSelect(filtered[activeIndex])
+        setOpen(false)
+        setActiveIndex(-1)
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false)
+      setActiveIndex(-1)
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        className={comboboxInputClassName}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setOpen(true)
+          setActiveIndex(-1)
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+      />
+      {showList && (
+        <ul
+          role="listbox"
+          className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-800"
+        >
+          {filtered.map((opt, i) => (
+            <li
+              key={opt}
+              role="option"
+              aria-selected={i === activeIndex}
+              className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
+                i === activeIndex
+                  ? 'bg-sky-50 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200'
+                  : 'text-slate-800 hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-700/50'
+              }`}
+              onMouseDown={() => {
+                onSelect(opt)
+                setOpen(false)
+                setActiveIndex(-1)
+              }}
+            >
+              {opt}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 function CustomerVehicleForm({
   customerId,
@@ -64,38 +171,25 @@ function CustomerVehicleForm({
     <form onSubmit={handleSubmit} className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40 md:grid-cols-4">
       <div>
         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Car make</label>
-        <input
-          list="vehicle-makes-list"
-          className={inputClassName}
+        <ComboboxInput
           value={makeSearch}
-          onChange={(event) => {
-            setMakeSearch(event.target.value)
-            setModelSearch('')
-          }}
+          onChange={(val) => { setMakeSearch(val); setModelSearch('') }}
+          onSelect={(val) => { setMakeSearch(val); setModelSearch('') }}
+          options={(makes ?? []).map((make) => make.name)}
           placeholder="Search make"
         />
-        <datalist id="vehicle-makes-list">
-          {(makes ?? []).map((make) => (
-            <option key={make.id} value={make.name} />
-          ))}
-        </datalist>
       </div>
 
       <div>
         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Car model</label>
-        <input
-          list="vehicle-models-list"
-          className={inputClassName}
+        <ComboboxInput
           value={modelSearch}
-          onChange={(event) => setModelSearch(event.target.value)}
+          onChange={setModelSearch}
+          onSelect={setModelSearch}
+          options={(models ?? []).map((model) => model.name)}
           placeholder={selectedMake ? 'Search model' : 'Select make first'}
           disabled={!selectedMake}
         />
-        <datalist id="vehicle-models-list">
-          {(models ?? []).map((model) => (
-            <option key={model.id} value={model.name} />
-          ))}
-        </datalist>
       </div>
 
       <div>
@@ -139,7 +233,7 @@ function CustomerViewPanel({
   onVehicleAdded: () => void
 }) {
   const navigate = useNavigate()
-  const { data: history, isLoading } = useCustomerJobOrderHistory(customer.id)
+  const { data: history, isLoading, error: historyError } = useCustomerJobOrderHistory(customer.id)
   const deleteVehicle = useDeleteCustomerVehicle()
 
   return (
@@ -148,6 +242,9 @@ function CustomerViewPanel({
         <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Customer</p>
         <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{customer.customer_name}</p>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{customer.address}</p>
+        {customer.phone_number && (
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">📞 {customer.phone_number}</p>
+        )}
       </div>
 
       <section>
@@ -196,6 +293,8 @@ function CustomerViewPanel({
         <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Job order history</h4>
         {isLoading ? (
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Loading history...</p>
+        ) : historyError ? (
+          <p className="mt-2 text-sm text-red-500 dark:text-red-400">Unable to load history. Make sure the database schema is up to date.</p>
         ) : history?.length ? (
           <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
@@ -204,6 +303,7 @@ function CustomerViewPanel({
                   <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Date</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Car</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">JO #</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -219,6 +319,16 @@ function CustomerViewPanel({
                       >
                         {row.job_order_code}
                       </button>
+                    </td>
+                    <td className="px-3 py-2 text-sm">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        row.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                        row.status === 'in_progress' ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300' :
+                        row.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                        'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      }`}>
+                        {row.status === 'in_progress' ? 'In progress' : row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -245,6 +355,7 @@ export function CustomersPage() {
   const [editing, setEditing] = useState<CustomerWithVehicles | null>(null)
   const [formName, setFormName] = useState('')
   const [formAddress, setFormAddress] = useState('')
+  const [formPhone, setFormPhone] = useState('')
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   const { data: customers, isLoading, error, refetch } = useCustomers(search)
@@ -260,6 +371,9 @@ export function CustomersPage() {
         <div className="min-w-[220px]">
           <p className="font-medium text-slate-900 dark:text-slate-100">{value}</p>
           <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{item.address}</p>
+          {item.phone_number && (
+            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{item.phone_number}</p>
+          )}
         </div>
       ),
     },
@@ -287,6 +401,7 @@ export function CustomersPage() {
     setEditing(null)
     setFormName('')
     setFormAddress('')
+    setFormPhone('')
     setFormOpen(true)
   }
 
@@ -294,6 +409,7 @@ export function CustomersPage() {
     setEditing(item)
     setFormName(item.customer_name)
     setFormAddress(item.address)
+    setFormPhone(item.phone_number ?? '')
     setFormOpen(true)
   }
 
@@ -303,10 +419,10 @@ export function CustomersPage() {
 
     try {
       if (editing) {
-        await updateCustomer.mutateAsync({ id: editing.id, customer_name: formName.trim(), address: formAddress.trim() })
+        await updateCustomer.mutateAsync({ id: editing.id, customer_name: formName.trim(), address: formAddress.trim(), phone_number: formPhone.trim() || null })
         setStatusMessage({ type: 'success', message: 'Customer updated successfully.' })
       } else {
-        await createCustomer.mutateAsync({ customer_name: formName.trim(), address: formAddress.trim() })
+        await createCustomer.mutateAsync({ customer_name: formName.trim(), address: formAddress.trim(), phone_number: formPhone.trim() || null })
         setStatusMessage({ type: 'success', message: 'Customer created successfully.' })
       }
       setFormOpen(false)
@@ -445,6 +561,16 @@ export function CustomersPage() {
               onChange={(event) => setFormAddress(event.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
               placeholder="Full customer address"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Phone number</label>
+            <input
+              type="tel"
+              value={formPhone}
+              onChange={(event) => setFormPhone(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950"
+              placeholder="e.g. 09XX XXX XXXX"
             />
           </div>
 

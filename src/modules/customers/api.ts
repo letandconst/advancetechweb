@@ -11,7 +11,7 @@ export async function listCustomersWithVehicles(search = ''): Promise<CustomerWi
 
   const keyword = search.trim()
   if (keyword) {
-    customersQuery = customersQuery.or(`customer_name.ilike.%${keyword}%,address.ilike.%${keyword}%`)
+    customersQuery = customersQuery.or(`customer_name.ilike.%${keyword}%,address.ilike.%${keyword}%,phone_number.ilike.%${keyword}%`)
   }
 
   const customersResult = await customersQuery
@@ -42,7 +42,7 @@ export async function listCustomersWithVehicles(search = ''): Promise<CustomerWi
   }))
 }
 
-export async function createCustomer(payload: { customer_name: string; address: string }): Promise<Customer> {
+export async function createCustomer(payload: { customer_name: string; address: string; phone_number?: string | null }): Promise<Customer> {
   const result = await supabase
     .from('customers')
     .insert(payload)
@@ -52,7 +52,7 @@ export async function createCustomer(payload: { customer_name: string; address: 
   return getSupabaseDataOrThrow(result, 'Failed to create customer') as Customer
 }
 
-export async function updateCustomer(payload: { id: string; customer_name: string; address: string }): Promise<Customer> {
+export async function updateCustomer(payload: { id: string; customer_name: string; address: string; phone_number?: string | null }): Promise<Customer> {
   const { id, ...updates } = payload
   const result = await supabase
     .from('customers')

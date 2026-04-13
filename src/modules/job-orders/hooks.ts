@@ -31,8 +31,93 @@ function formatCode(sequence: number) {
   return `JO-${sequence.toString().padStart(5, '0')}`
 }
 
+async function ensureCustomerReferences(payload: JobOrderFormData): Promise<JobOrderFormData> {
+  // If linked already, preserve explicit selections.
+  if (payload.customer_id) return payload
+
+  const customerName = payload.customer_name.trim()
+  const customerAddress = payload.customer_address.trim()
+  if (!customerName || !customerAddress) return payload
+
+  const { data: existingCustomer, error: existingCustomerError } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('customer_name', customerName)
+    .eq('address', customerAddress)
+    .limit(1)
+    .maybeSingle()
+
+  if (existingCustomerError) throw existingCustomerError
+
+  let customerId = existingCustomer?.id ?? null
+
+  if (!customerId) {
+    const { data: createdCustomer, error: createCustomerError } = await supabase
+      .from('customers')
+      .insert({
+        customer_name: customerName,
+        address: customerAddress,
+      })
+      .select('id')
+      .single()
+
+    if (createCustomerError) throw createCustomerError
+    customerId = createdCustomer.id
+  }
+
+  // Also try to persist vehicle details for manual entry when complete.
+  const carMake = payload.vehicle_make.trim()
+  const carModel = payload.vehicle_model?.trim() ?? ''
+  const plateNumber = payload.plate_number.trim().toUpperCase()
+  const vehicleYear = payload.vehicle_year
+
+  let customerVehicleId = payload.customer_vehicle_id ?? null
+
+  if (!customerVehicleId && carMake && carModel && plateNumber && vehicleYear) {
+    const { data: existingVehicle, error: existingVehicleError } = await supabase
+      .from('customer_vehicles')
+      .select('id, customer_id')
+      .eq('plate_number', plateNumber)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingVehicleError) throw existingVehicleError
+
+    if (existingVehicle) {
+      customerVehicleId = existingVehicle.id
+      customerId = existingVehicle.customer_id
+    } else {
+      const { data: createdVehicle, error: createVehicleError } = await supabase
+        .from('customer_vehicles')
+        .insert({
+          customer_id: customerId,
+          car_make: carMake,
+          car_model: carModel,
+          year: vehicleYear,
+          plate_number: plateNumber,
+          is_primary: false,
+        })
+        .select('id')
+        .single()
+
+      if (createVehicleError) throw createVehicleError
+      customerVehicleId = createdVehicle.id
+    }
+  }
+
+  return {
+    ...payload,
+    customer_id: customerId,
+    customer_vehicle_id: customerVehicleId,
+  }
+}
+
 async function consumeInventory(items: JobOrderInventoryItem[], jobOrderId: string) {
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   const grouped = items.reduce<Record<string, number>>((acc, item) => {
+    // Ad-hoc rows are stored in job order JSON but do not map to inventory stock.
+    if (!uuidPattern.test(item.inventory_item_id)) return acc
+
     acc[item.inventory_item_id] = (acc[item.inventory_item_id] ?? 0) + Math.max(item.quantity, 0)
     return acc
   }, {})
@@ -229,9 +314,11 @@ export function useCreateJobOrder() {
 
   return useMutation({
     mutationFn: async (payload: JobOrderFormData) => {
+      const hydratedPayload = await ensureCustomerReferences(payload)
+
       const insertPayload = {
-        ...payload,
-        inventory_consumed_at: payload.status === 'in_progress' ? new Date().toISOString() : null,
+        ...hydratedPayload,
+        inventory_consumed_at: hydratedPayload.status === 'in_progress' ? new Date().toISOString() : null,
       }
 
       const { data, error } = await supabase
@@ -243,8 +330,8 @@ export function useCreateJobOrder() {
       if (error) throw error
 
       // Consume inventory and create logs after job order is created
-      if (payload.status === 'in_progress') {
-        await consumeInventory([...(payload.oil_and_fuels ?? []), ...(payload.parts ?? [])], data.id)
+      if (hydratedPayload.status === 'in_progress') {
+        await consumeInventory([...(hydratedPayload.oil_and_fuels ?? []), ...(hydratedPayload.parts ?? [])], data.id)
       }
 
       return data as JobOrder
@@ -259,6 +346,7 @@ export function useCreateJobOrder() {
         queryClient.invalidateQueries({ queryKey: ['dashboard-recent-jobs'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-low-stock'] }),
         queryClient.invalidateQueries({ queryKey: ['reports-analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['customers'] }),
       ])
     },
   })
@@ -269,10 +357,11 @@ export function useUpdateJobOrder() {
 
   return useMutation({
     mutationFn: async ({ id, previousStatus, ...payload }: JobOrderFormData & { id: string; previousStatus: JobOrderStatus }) => {
-      const shouldConsume = previousStatus !== 'in_progress' && payload.status === 'in_progress'
+      const hydratedPayload = await ensureCustomerReferences(payload)
+      const shouldConsume = previousStatus !== 'in_progress' && hydratedPayload.status === 'in_progress'
 
       const updatePayload = {
-        ...payload,
+        ...hydratedPayload,
         inventory_consumed_at: shouldConsume ? new Date().toISOString() : undefined,
       }
 
@@ -287,7 +376,7 @@ export function useUpdateJobOrder() {
 
       // Consume inventory and create logs after job order is updated
       if (shouldConsume) {
-        await consumeInventory([...(payload.oil_and_fuels ?? []), ...(payload.parts ?? [])], id)
+        await consumeInventory([...(hydratedPayload.oil_and_fuels ?? []), ...(hydratedPayload.parts ?? [])], id)
       }
 
       return data as JobOrder
@@ -302,6 +391,7 @@ export function useUpdateJobOrder() {
         queryClient.invalidateQueries({ queryKey: ['dashboard-recent-jobs'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-low-stock'] }),
         queryClient.invalidateQueries({ queryKey: ['reports-analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['customers'] }),
       ])
     },
   })

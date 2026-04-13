@@ -36,6 +36,7 @@ create table if not exists public.customers (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
   address text not null,
+  phone_number text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   created_by uuid references auth.users(id) on delete set null,
@@ -56,6 +57,9 @@ create table if not exists public.customer_vehicles (
   updated_by uuid references auth.users(id) on delete set null,
   unique (plate_number)
 );
+
+-- If the customers table already exists from a prior run, add the phone_number column
+alter table public.customers add column if not exists phone_number text;
 
 create index if not exists customers_name_idx on public.customers(customer_name);
 create index if not exists customers_created_at_idx on public.customers(created_at desc);

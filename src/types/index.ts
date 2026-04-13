@@ -78,6 +78,7 @@ export type Customer = {
   id: string
   customer_name: string
   address: string
+  phone_number?: string | null
   created_at: string
   updated_at: string
 }

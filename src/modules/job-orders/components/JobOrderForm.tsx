@@ -6,7 +6,10 @@ import { CustomerWithVehicles } from '../../customers'
 
 type InventoryDraftRow = {
   id: string
+  mode: 'inventory' | 'adhoc'
   inventory_item_id: string
+  adhoc_name: string
+  unit_price: number
   quantity: number
 }
 
@@ -39,8 +42,15 @@ function formatPhpCurrency(value: number) {
 
 function toInventoryDraftRows(items: JobOrderInventoryItem[]) {
   return items.length
-    ? items.map((item) => ({ id: item.id, inventory_item_id: item.inventory_item_id, quantity: item.quantity }))
-    : [{ id: crypto.randomUUID(), inventory_item_id: '', quantity: 1 }]
+    ? items.map((item) => ({
+      id: item.id,
+      mode: item.inventory_item_id.startsWith('adhoc-') ? 'adhoc' : 'inventory',
+      inventory_item_id: item.inventory_item_id.startsWith('adhoc-') ? '' : item.inventory_item_id,
+      adhoc_name: item.inventory_item_id.startsWith('adhoc-') ? item.item_name : '',
+      unit_price: Number(item.unit_price ?? 0),
+      quantity: item.quantity,
+    }))
+    : [{ id: crypto.randomUUID(), mode: 'inventory', inventory_item_id: '', adhoc_name: '', unit_price: 0, quantity: 1 }]
 }
 
 export function JobOrderForm({
@@ -110,6 +120,8 @@ export function JobOrderForm({
     () => selectedCustomer?.vehicles.find((vehicle) => vehicle.id === customerVehicleId) ?? null,
     [selectedCustomer, customerVehicleId]
   )
+  const isCustomerDetailsLocked = Boolean(customerId)
+  const isVehicleDetailsLocked = Boolean(customerVehicleId)
 
   useEffect(() => {
     if (!selectedCustomer) return
@@ -138,35 +150,67 @@ export function JobOrderForm({
   )
 
   const oilAndFuelItems = useMemo<JobOrderInventoryItem[]>(() => {
-    return oilsAndFuels
-      .filter((row) => row.inventory_item_id && row.quantity > 0)
-      .map((row) => {
-        const selected = fluidById[row.inventory_item_id]
-        return {
+    return oilsAndFuels.flatMap((row) => {
+      if (row.quantity <= 0) return []
+
+      if (row.mode === 'adhoc') {
+        const adhocName = row.adhoc_name.trim()
+        if (!adhocName) return []
+
+        return [{
           id: row.id,
-          inventory_item_id: row.inventory_item_id,
-          item_name: selected?.name ?? 'Unknown Fluid',
-          category: selected?.category ?? 'Fluids',
+          inventory_item_id: `adhoc-${row.id}`,
+          item_name: adhocName,
+          category: 'Fluids',
           quantity: Math.max(Math.floor(row.quantity), 0),
-          unit_price: Number(selected?.price ?? 0),
-        }
-      })
+          unit_price: Number(row.unit_price || 0),
+        }]
+      }
+
+      if (!row.inventory_item_id) return []
+
+      const selected = fluidById[row.inventory_item_id]
+      return [{
+        id: row.id,
+        inventory_item_id: row.inventory_item_id,
+        item_name: selected?.name ?? 'Unknown Fluid',
+        category: selected?.category ?? 'Fluids',
+        quantity: Math.max(Math.floor(row.quantity), 0),
+        unit_price: Number(selected?.price ?? 0),
+      }]
+    })
   }, [fluidById, oilsAndFuels])
 
   const partItems = useMemo<JobOrderInventoryItem[]>(() => {
-    return parts
-      .filter((row) => row.inventory_item_id && row.quantity > 0)
-      .map((row) => {
-        const selected = partById[row.inventory_item_id]
-        return {
+    return parts.flatMap((row) => {
+      if (row.quantity <= 0) return []
+
+      if (row.mode === 'adhoc') {
+        const adhocName = row.adhoc_name.trim()
+        if (!adhocName) return []
+
+        return [{
           id: row.id,
-          inventory_item_id: row.inventory_item_id,
-          item_name: selected?.name ?? 'Unknown Part',
-          category: selected?.category ?? 'Parts',
+          inventory_item_id: `adhoc-${row.id}`,
+          item_name: adhocName,
+          category: 'Parts',
           quantity: Math.max(Math.floor(row.quantity), 0),
-          unit_price: Number(selected?.price ?? 0),
-        }
-      })
+          unit_price: Number(row.unit_price || 0),
+        }]
+      }
+
+      if (!row.inventory_item_id) return []
+
+      const selected = partById[row.inventory_item_id]
+      return [{
+        id: row.id,
+        inventory_item_id: row.inventory_item_id,
+        item_name: selected?.name ?? 'Unknown Part',
+        category: selected?.category ?? 'Parts',
+        quantity: Math.max(Math.floor(row.quantity), 0),
+        unit_price: Number(selected?.price ?? 0),
+      }]
+    })
   }, [partById, parts])
 
   const oilFuelTotal = useMemo(
@@ -248,7 +292,14 @@ export function JobOrderForm({
   }
 
   function addInventoryRow(type: 'fluids' | 'parts') {
-    const newRow = { id: crypto.randomUUID(), inventory_item_id: '', quantity: 1 }
+    const newRow: InventoryDraftRow = {
+      id: crypto.randomUUID(),
+      mode: 'inventory',
+      inventory_item_id: '',
+      adhoc_name: '',
+      unit_price: 0,
+      quantity: 1,
+    }
     if (type === 'fluids') {
       setOilsAndFuels((prev) => [...prev, newRow])
       return
@@ -275,6 +326,16 @@ export function JobOrderForm({
     setParts((prev) => prev.map((row) => (row.id === id ? { ...row, ...updates } : row)))
   }
 
+  function handleInventoryRowModeChange(type: 'fluids' | 'parts', id: string, nextMode: 'inventory' | 'adhoc') {
+    updateInventoryRow(type, id, {
+      mode: nextMode,
+      inventory_item_id: '',
+      adhoc_name: '',
+      unit_price: 0,
+      quantity: 1,
+    })
+  }
+
   function applyDiscountPreset(type: JobOrderDiscountType, value: number) {
     setDiscountType(type)
     setDiscountValue(value)
@@ -293,10 +354,24 @@ export function JobOrderForm({
     const hasInvalidWork = workRequested.some((row) => !row.service_name.trim() || row.amount < 0)
     if (hasInvalidWork) nextErrors.push('Each work requested row must have a service name and non-negative amount')
 
-    const hasInvalidFluids = oilsAndFuels.some((row) => row.inventory_item_id && row.quantity < 1)
+    const hasInvalidFluids = oilsAndFuels.some((row) => {
+      if (row.mode === 'adhoc') {
+        return !row.adhoc_name.trim() || row.quantity < 1 || row.unit_price < 0
+      }
+
+      if (!row.inventory_item_id) return false
+      return row.quantity < 1
+    })
     if (hasInvalidFluids) nextErrors.push('Oil and fuel quantities must be at least 1')
 
-    const hasInvalidParts = parts.some((row) => row.inventory_item_id && row.quantity < 1)
+    const hasInvalidParts = parts.some((row) => {
+      if (row.mode === 'adhoc') {
+        return !row.adhoc_name.trim() || row.quantity < 1 || row.unit_price < 0
+      }
+
+      if (!row.inventory_item_id) return false
+      return row.quantity < 1
+    })
     if (hasInvalidParts) nextErrors.push('Part quantities must be at least 1')
 
     setErrors(nextErrors)
@@ -363,6 +438,19 @@ export function JobOrderForm({
 
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Customer details</h3>
+        {isCustomerDetailsLocked && (
+          <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
+            This job order is linked to a customer profile. Linked customer fields are locked to prevent mismatch.
+          </div>
+        )}
+        {!isReadOnly && !customerId && customerName.trim() && (
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-300">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span><strong>{customerName.trim()}</strong> will be saved as a new customer when this job order is submitted.</span>
+          </div>
+        )}
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Select customer</label>
@@ -370,8 +458,19 @@ export function JobOrderForm({
               className={inputClassName}
               value={customerId}
               onChange={(e) => {
-                setCustomerId(e.target.value)
+                const nextCustomerId = e.target.value
+                setCustomerId(nextCustomerId)
                 setCustomerVehicleId('')
+
+                // Reset fields when switching back to manual entry.
+                if (!nextCustomerId) {
+                  setCustomerName('')
+                  setCustomerAddress('')
+                  setVehicleMake('')
+                  setVehicleModel('')
+                  setVehicleYear('')
+                  setPlateNumber('')
+                }
               }}
               disabled={isReadOnly}
             >
@@ -386,7 +485,18 @@ export function JobOrderForm({
             <select
               className={inputClassName}
               value={customerVehicleId}
-              onChange={(e) => setCustomerVehicleId(e.target.value)}
+              onChange={(e) => {
+                const nextVehicleId = e.target.value
+                setCustomerVehicleId(nextVehicleId)
+
+                // Reset vehicle fields when returning to manual vehicle entry.
+                if (!nextVehicleId) {
+                  setVehicleMake('')
+                  setVehicleModel('')
+                  setVehicleYear('')
+                  setPlateNumber('')
+                }
+              }}
               disabled={isReadOnly || !selectedCustomer}
             >
               <option value="">Manual vehicle entry</option>
@@ -399,27 +509,27 @@ export function JobOrderForm({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Customer name *</label>
-            <input className={inputClassName} value={customerName} onChange={(e) => setCustomerName(e.target.value)} readOnly={isReadOnly} />
+            <input className={inputClassName} value={customerName} onChange={(e) => setCustomerName(e.target.value)} readOnly={isReadOnly || isCustomerDetailsLocked} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Address *</label>
-            <input className={inputClassName} value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} readOnly={isReadOnly} />
+            <input className={inputClassName} value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} readOnly={isReadOnly || isCustomerDetailsLocked} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Car make *</label>
-            <input className={inputClassName} placeholder="e.g., Toyota" value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} readOnly={isReadOnly} />
+            <input className={inputClassName} placeholder="e.g., Toyota" value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} readOnly={isReadOnly || isVehicleDetailsLocked} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Car model</label>
-            <input className={inputClassName} placeholder="e.g., Vios" value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} readOnly={isReadOnly} />
+            <input className={inputClassName} placeholder="e.g., Vios" value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} readOnly={isReadOnly || isVehicleDetailsLocked} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Year</label>
-            <input type="number" className={inputClassName} value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value === '' ? '' : Number(e.target.value))} readOnly={isReadOnly} />
+            <input type="number" className={inputClassName} value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value === '' ? '' : Number(e.target.value))} readOnly={isReadOnly || isVehicleDetailsLocked} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Plate number *</label>
-            <input className={inputClassName} value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} readOnly={isReadOnly} />
+            <input className={inputClassName} value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} readOnly={isReadOnly || isVehicleDetailsLocked} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Job order ID</label>
@@ -455,6 +565,7 @@ export function JobOrderForm({
           <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Work requested</h3>
           <Button type="button" variant="secondary" size="sm" onClick={addWorkRequestedRow} disabled={isReadOnly}>Add row</Button>
         </div>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Choose <strong>Service</strong> for predefined services or <strong>Ad hoc</strong> for manually entered work and pricing.</p>
 
         <div className="mt-4 space-y-3">
           {workRequested.map((row, index) => (
@@ -520,20 +631,40 @@ export function JobOrderForm({
           <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Oil and fuels</h3>
           <Button type="button" variant="secondary" size="sm" onClick={() => addInventoryRow('fluids')} disabled={isReadOnly}>Add row</Button>
         </div>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Choose <strong>Inventory</strong> for stock-managed items or <strong>Ad hoc</strong> for manually priced items.</p>
         <div className="mt-4 space-y-3">
           {oilsAndFuels.map((row) => (
-            <div key={row.id} className="grid gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 md:grid-cols-[minmax(0,1fr)_140px_auto]">
+            <div key={row.id} className="grid gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 md:grid-cols-[130px_minmax(0,1fr)_140px_160px_auto]">
               <select
                 className={inputClassName}
-                value={row.inventory_item_id}
-                onChange={(e) => updateInventoryRow('fluids', row.id, { inventory_item_id: e.target.value })}
+                value={row.mode}
+                onChange={(e) => handleInventoryRowModeChange('fluids', row.id, e.target.value as 'inventory' | 'adhoc')}
                 disabled={isReadOnly}
               >
-                <option value="">Select fluid inventory item</option>
-                {fluidOptions.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name} ({formatPhpCurrency(item.price)})</option>
-                ))}
+                <option value="inventory">Inventory</option>
+                <option value="adhoc">Ad hoc</option>
               </select>
+              {row.mode === 'inventory' ? (
+                <select
+                  className={inputClassName}
+                  value={row.inventory_item_id}
+                  onChange={(e) => updateInventoryRow('fluids', row.id, { inventory_item_id: e.target.value })}
+                  disabled={isReadOnly}
+                >
+                  <option value="">Select fluid inventory item</option>
+                  {fluidOptions.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name} ({formatPhpCurrency(item.price)})</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className={inputClassName}
+                  placeholder="Ad hoc fluid item name"
+                  value={row.adhoc_name}
+                  onChange={(e) => updateInventoryRow('fluids', row.id, { adhoc_name: e.target.value })}
+                  readOnly={isReadOnly}
+                />
+              )}
               <input
                 type="number"
                 min="1"
@@ -542,6 +673,15 @@ export function JobOrderForm({
                 value={row.quantity}
                 onChange={(e) => updateInventoryRow('fluids', row.id, { quantity: Math.max(Number(e.target.value || 1), 1) })}
                 readOnly={isReadOnly}
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className={inputClassName}
+                value={row.mode === 'inventory' ? Number(fluidById[row.inventory_item_id]?.price ?? 0) : row.unit_price}
+                onChange={(e) => updateInventoryRow('fluids', row.id, { unit_price: Math.max(Number(e.target.value || 0), 0) })}
+                readOnly={isReadOnly || row.mode === 'inventory'}
               />
               <Button type="button" variant="danger" size="sm" disabled={isReadOnly || oilsAndFuels.length <= 1} onClick={() => removeInventoryRow('fluids', row.id)}>
                 Remove
@@ -556,20 +696,40 @@ export function JobOrderForm({
           <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Parts</h3>
           <Button type="button" variant="secondary" size="sm" onClick={() => addInventoryRow('parts')} disabled={isReadOnly}>Add row</Button>
         </div>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Choose <strong>Inventory</strong> for stock-managed items or <strong>Ad hoc</strong> for manually priced items.</p>
         <div className="mt-4 space-y-3">
           {parts.map((row) => (
-            <div key={row.id} className="grid gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 md:grid-cols-[minmax(0,1fr)_140px_auto]">
+            <div key={row.id} className="grid gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 md:grid-cols-[130px_minmax(0,1fr)_140px_160px_auto]">
               <select
                 className={inputClassName}
-                value={row.inventory_item_id}
-                onChange={(e) => updateInventoryRow('parts', row.id, { inventory_item_id: e.target.value })}
+                value={row.mode}
+                onChange={(e) => handleInventoryRowModeChange('parts', row.id, e.target.value as 'inventory' | 'adhoc')}
                 disabled={isReadOnly}
               >
-                <option value="">Select part inventory item</option>
-                {partOptions.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name} ({formatPhpCurrency(item.price)})</option>
-                ))}
+                <option value="inventory">Inventory</option>
+                <option value="adhoc">Ad hoc</option>
               </select>
+              {row.mode === 'inventory' ? (
+                <select
+                  className={inputClassName}
+                  value={row.inventory_item_id}
+                  onChange={(e) => updateInventoryRow('parts', row.id, { inventory_item_id: e.target.value })}
+                  disabled={isReadOnly}
+                >
+                  <option value="">Select part inventory item</option>
+                  {partOptions.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name} ({formatPhpCurrency(item.price)})</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className={inputClassName}
+                  placeholder="Ad hoc part item name"
+                  value={row.adhoc_name}
+                  onChange={(e) => updateInventoryRow('parts', row.id, { adhoc_name: e.target.value })}
+                  readOnly={isReadOnly}
+                />
+              )}
               <input
                 type="number"
                 min="1"
@@ -578,6 +738,15 @@ export function JobOrderForm({
                 value={row.quantity}
                 onChange={(e) => updateInventoryRow('parts', row.id, { quantity: Math.max(Number(e.target.value || 1), 1) })}
                 readOnly={isReadOnly}
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className={inputClassName}
+                value={row.mode === 'inventory' ? Number(partById[row.inventory_item_id]?.price ?? 0) : row.unit_price}
+                onChange={(e) => updateInventoryRow('parts', row.id, { unit_price: Math.max(Number(e.target.value || 0), 0) })}
+                readOnly={isReadOnly || row.mode === 'inventory'}
               />
               <Button type="button" variant="danger" size="sm" disabled={isReadOnly || parts.length <= 1} onClick={() => removeInventoryRow('parts', row.id)}>
                 Remove

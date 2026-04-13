@@ -11,6 +11,7 @@ export type CustomerWithVehicles = {
   id: string
   customer_name: string
   address: string
+  phone_number?: string | null
   vehicles: Array<{
     id: string
     car_make: string
