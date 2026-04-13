@@ -59,6 +59,17 @@ export async function createInventoryItem(payload: InventoryFormData): Promise<I
   return getSupabaseDataOrThrow(result, 'Failed to create inventory item') as InventoryItem
 }
 
+export async function createInventoryItemsBulk(payload: InventoryFormData[]): Promise<InventoryItem[]> {
+  if (!payload.length) return []
+
+  const result = await supabase
+    .from('inventory_items')
+    .insert(payload)
+    .select()
+
+  return getSupabaseListOrEmpty(result, 'Failed to bulk create inventory items') as InventoryItem[]
+}
+
 export async function updateInventoryItem(payload: Partial<InventoryFormData> & { id: string }): Promise<InventoryItem> {
   const { id, ...updates } = payload
 

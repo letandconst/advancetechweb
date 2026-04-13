@@ -3,6 +3,7 @@ import { queryKeys } from '../../lib/queryKeys'
 import {
   adjustInventoryStock,
   createInventoryItem,
+  createInventoryItemsBulk,
   deleteInventoryItem,
   listInventoryItems,
   listInventoryLogs,
@@ -68,6 +69,17 @@ export function useCreateInventoryItem() {
 
   return useMutation({
     mutationFn: createInventoryItem,
+    onSuccess: async () => {
+      await invalidateInventoryRelatedQueries(queryClient)
+    },
+  })
+}
+
+export function useBulkCreateInventoryItems() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: createInventoryItemsBulk,
     onSuccess: async () => {
       await invalidateInventoryRelatedQueries(queryClient)
     },

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../../lib/queryKeys'
-import { createService, deactivateService, listServices, updateService } from './api'
+import { createService, createServicesBulk, deactivateService, listServices, updateService } from './api'
 import { Service, ServiceFormData } from './types'
 
 export interface ServiceFilters {
@@ -40,6 +40,17 @@ export function useCreateService() {
 
   return useMutation({
     mutationFn: createService,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+    },
+  })
+}
+
+export function useBulkCreateServices() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: createServicesBulk,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
     },

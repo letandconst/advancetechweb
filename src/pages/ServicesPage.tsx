@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
-import { AlertCircle, CheckCircle, Plus, ShieldAlert, Sparkles, Wrench, CircleDollarSign, FileText } from 'lucide-react'
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { AlertCircle, CheckCircle, Plus, ShieldAlert, Sparkles, Wrench, CircleDollarSign, FileText, Upload } from 'lucide-react'
 import { Button, DataTable, LoadingSpinner, Modal } from '../components'
 import { useAuth } from '../hooks'
+import { supabase } from '../lib/supabase'
 import { ServiceForm } from '../modules/services/components/ServiceForm'
 import { Service, ServiceFormData } from '../modules/services/types'
-import { ServiceFilters, useCreateService, useDeactivateService, useServices, useUpdateService } from '../modules/services/hooks'
+import { ServiceFilters, useBulkCreateServices, useCreateService, useDeactivateService, useServices, useUpdateService } from '../modules/services/hooks'
+import { downloadCsv } from '../utils/csv'
+import { parseSpreadsheetFile, toNumberOrNull } from '../utils/spreadsheet'
 
 function formatPhpCurrency(value: number) {
   return new Intl.NumberFormat('en-PH', {
@@ -13,6 +16,10 @@ function formatPhpCurrency(value: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase()
 }
 
 function ServiceViewPanel({ service, onClose }: { service: Service; onClose: () => void }) {
@@ -67,11 +74,19 @@ export function ServicesPage() {
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [viewingService, setViewingService] = useState<Service | null>(null)
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [serviceImportPreview, setServiceImportPreview] = useState<{
+    fileName: string
+    rows: ServiceFormData[]
+    duplicateExistingNames: string[]
+  } | null>(null)
+  const [skipExistingServiceDuplicates, setSkipExistingServiceDuplicates] = useState(false)
 
   const { data: servicesResult, isLoading, isFetching, error } = useServices({ page, pageSize, filters })
   const createService = useCreateService()
+  const bulkCreateServices = useBulkCreateServices()
   const updateService = useUpdateService()
   const deactivateService = useDeactivateService()
+  const serviceImportInputRef = useRef<HTMLInputElement | null>(null)
 
   const services = servicesResult?.items ?? []
   const totalServices = servicesResult?.totalCount ?? 0
@@ -172,6 +187,142 @@ export function ServicesPage() {
     }
   }
 
+  async function handleBulkServiceImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    try {
+      const rows = await parseSpreadsheetFile(file)
+      const nonEmptyRows = rows.filter((row) => Object.values(row).some((value) => value.trim() !== ''))
+
+      if (!nonEmptyRows.length) {
+        setStatusMessage({ type: 'error', message: 'No import rows found. Please check your CSV/Excel file.' })
+        return
+      }
+
+      const requiredColumns = ['name', 'description', 'price']
+      const availableColumns = new Set(Object.keys(nonEmptyRows[0]))
+      const missingColumns = requiredColumns.filter((column) => !availableColumns.has(column))
+
+      if (missingColumns.length) {
+        setStatusMessage({
+          type: 'error',
+          message: `Missing required columns: ${missingColumns.join(', ')}. Expected columns: name, description, price, status(optional).`,
+        })
+        return
+      }
+
+      const errors: string[] = []
+      const payload: ServiceFormData[] = []
+      const seenNames = new Set<string>()
+
+      nonEmptyRows.forEach((row, index) => {
+        const rowNumber = index + 2
+        const name = row.name?.trim() ?? ''
+        const description = row.description?.trim() ?? ''
+        const priceRaw = row.price?.trim() ?? ''
+        const statusRaw = (row.status?.trim().toLowerCase() ?? 'active') as ServiceFormData['status']
+        const price = toNumberOrNull(priceRaw)
+        const rowErrors: string[] = []
+        const normalizedName = normalizeText(name)
+
+        if (!name) rowErrors.push(`Row ${rowNumber}: name is required.`)
+        if (!description) rowErrors.push(`Row ${rowNumber}: description is required.`)
+        if (price === null || price < 0) rowErrors.push(`Row ${rowNumber}: price must be a valid non-negative number.`)
+        if (statusRaw !== 'active' && statusRaw !== 'inactive') {
+          rowErrors.push(`Row ${rowNumber}: status must be either active or inactive.`)
+        }
+        if (normalizedName && seenNames.has(normalizedName)) {
+          rowErrors.push(`Row ${rowNumber}: duplicate service name found in the file.`)
+        }
+
+        if (rowErrors.length) {
+          errors.push(...rowErrors)
+          return
+        }
+
+        seenNames.add(normalizedName)
+
+        payload.push({
+          name,
+          description,
+          price: price ?? 0,
+          status: statusRaw,
+        })
+      })
+
+      if (errors.length) {
+        setStatusMessage({
+          type: 'error',
+          message: `Import blocked due to validation errors. ${errors.slice(0, 3).join(' ')}${errors.length > 3 ? ' ...' : ''}`,
+        })
+        return
+      }
+
+      const incomingNames = Array.from(new Set(payload.map((item) => item.name.trim()))).filter(Boolean)
+      const existingResult = await supabase
+        .from('services')
+        .select('name')
+        .in('name', incomingNames)
+
+      if (existingResult.error) {
+        throw existingResult.error
+      }
+
+      const existingNames = new Set((existingResult.data ?? []).map((row) => normalizeText(row.name ?? '')))
+      const duplicateExisting = payload
+        .map((item) => item.name)
+        .filter((name) => existingNames.has(normalizeText(name)))
+
+      setServiceImportPreview({
+        fileName: file.name,
+        rows: payload,
+        duplicateExistingNames: Array.from(new Set(duplicateExisting)),
+      })
+      setSkipExistingServiceDuplicates(false)
+      setStatusMessage({ type: 'success', message: `File parsed successfully. Review ${payload.length} row(s) below before importing.` })
+    } catch {
+      setStatusMessage({ type: 'error', message: 'Unable to parse file. Please upload a valid .csv, .xlsx, or .xls file.' })
+      setTimeout(() => setStatusMessage(null), 4000)
+    }
+  }
+
+  async function confirmServiceImport() {
+    if (!serviceImportPreview) return
+
+    const duplicateSet = new Set(serviceImportPreview.duplicateExistingNames.map(normalizeText))
+    const importableRows = skipExistingServiceDuplicates
+      ? serviceImportPreview.rows.filter((row) => !duplicateSet.has(normalizeText(row.name)))
+      : serviceImportPreview.rows
+
+    if (!skipExistingServiceDuplicates && serviceImportPreview.duplicateExistingNames.length > 0) {
+      setStatusMessage({ type: 'error', message: 'Import blocked. Existing duplicates detected. Enable "Skip existing duplicates" to continue.' })
+      return
+    }
+
+    if (!importableRows.length) {
+      setStatusMessage({ type: 'error', message: 'No rows left to import after duplicate filtering.' })
+      return
+    }
+
+    await bulkCreateServices.mutateAsync(importableRows)
+    setServiceImportPreview(null)
+    setStatusMessage({ type: 'success', message: `Successfully imported ${importableRows.length} services.` })
+    setTimeout(() => setStatusMessage(null), 4000)
+  }
+
+  function downloadServiceTemplate() {
+    downloadCsv('services-import-template.csv', [
+      {
+        name: 'Oil Change Labor',
+        description: 'Labor for full oil and filter replacement',
+        price: 1200,
+        status: 'active',
+      },
+    ])
+  }
+
   function handleCancelForm() {
     setIsFormOpen(false)
     setEditingService(null)
@@ -227,10 +378,41 @@ export function ServicesPage() {
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Maintain pricing for standard specialization work and ad hoc repair services in one module.</p>
           </div>
           {isAdmin() && (
-            <Button onClick={handleCreate} className="gap-2 self-start lg:self-auto">
-              <Plus className="h-4 w-4" />
-              Add service
-            </Button>
+            <div className="self-start lg:self-auto">
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={serviceImportInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={handleBulkServiceImport}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={downloadServiceTemplate}
+                >
+                  Download Template
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => serviceImportInputRef.current?.click()}
+                  disabled={bulkCreateServices.isPending}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload CSV/Excel
+                </Button>
+                <Button onClick={handleCreate} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add service
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                CSV/Excel columns: <span className="font-medium">name, description, price</span>, and optional <span className="font-medium">status</span> (active/inactive).
+              </p>
+            </div>
           )}
         </div>
 
@@ -272,6 +454,68 @@ export function ServicesPage() {
           )}
           <span className="text-sm">{statusMessage.message}</span>
         </div>
+      )}
+
+      {isAdmin() && serviceImportPreview && (
+        <section className="rounded-[22px] border border-slate-200 bg-white/95 p-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.35)] dark:border-slate-800 dark:bg-slate-900/90">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Service import preview</h3>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">File: {serviceImportPreview.fileName} • Parsed rows: {serviceImportPreview.rows.length}</p>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Existing duplicates: {serviceImportPreview.duplicateExistingNames.length}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setServiceImportPreview(null)}>Cancel</Button>
+              <Button type="button" size="sm" onClick={confirmServiceImport} disabled={bulkCreateServices.isPending}>
+                Import {skipExistingServiceDuplicates
+                  ? serviceImportPreview.rows.filter((row) => !new Set(serviceImportPreview.duplicateExistingNames.map(normalizeText)).has(normalizeText(row.name))).length
+                  : serviceImportPreview.rows.length} rows
+              </Button>
+            </div>
+          </div>
+
+          <label className="mt-4 inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              checked={skipExistingServiceDuplicates}
+              onChange={(event) => setSkipExistingServiceDuplicates(event.target.checked)}
+            />
+            Skip existing duplicates and import only new rows
+          </label>
+
+          {serviceImportPreview.duplicateExistingNames.length > 0 && (
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+              Duplicates found: {serviceImportPreview.duplicateExistingNames.slice(0, 5).join(', ')}{serviceImportPreview.duplicateExistingNames.length > 5 ? ' ...' : ''}
+            </p>
+          )}
+
+          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-900/70">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Name</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Description</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Price</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                {serviceImportPreview.rows.slice(0, 20).map((row, index) => (
+                  <tr key={`${row.name}-${index}`}>
+                    <td className="px-3 py-2 text-sm text-slate-900 dark:text-slate-100">{row.name}</td>
+                    <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300">{row.description}</td>
+                    <td className="px-3 py-2 text-sm text-slate-900 dark:text-slate-100">{formatPhpCurrency(Number(row.price))}</td>
+                    <td className="px-3 py-2 text-sm text-slate-900 dark:text-slate-100">{row.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {serviceImportPreview.rows.length > 20 && (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Showing first 20 rows only.</p>
+          )}
+        </section>
       )}
 
       <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">

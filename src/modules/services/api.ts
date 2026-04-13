@@ -67,6 +67,17 @@ export async function createService(service: ServiceFormData): Promise<Service> 
   return getSupabaseDataOrThrow(result, 'Failed to create service') as Service
 }
 
+export async function createServicesBulk(services: ServiceFormData[]): Promise<Service[]> {
+  if (!services.length) return []
+
+  const result = await supabase
+    .from('services')
+    .insert(services)
+    .select()
+
+  return getSupabaseListOrEmpty(result, 'Failed to bulk create services') as Service[]
+}
+
 export async function updateService(payload: Partial<ServiceFormData> & { id: string }): Promise<Service> {
   const { id, ...updates } = payload
 
