@@ -43,8 +43,11 @@ export type InventoryItem = {
   name: string
   description: string
   price: number
+  cost?: number | null // Supplier/landed cost per unit
   amount: number
   category: string
+  unit_type?: string // 'piece', 'liter', 'kg', 'box', etc.
+  cost_updated_at?: string // When cost was last updated
   created_at: string
   updated_at: string
 }

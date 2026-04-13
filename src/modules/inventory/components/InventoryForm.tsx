@@ -11,12 +11,21 @@ interface InventoryFormProps {
 }
 
 export function InventoryForm({ initialData, onSubmit, onCancel, loading = false }: InventoryFormProps) {
+  const currencyFormatter = new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+
   const [formData, setFormData] = useState<InventoryFormData>({
     name: '',
     description: '',
     price: 0,
+    cost: undefined,
     amount: 0,
     category: INVENTORY_CATEGORIES[0],
+    unit_type: 'piece',
     ...initialData,
   })
 
@@ -27,8 +36,10 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
       name: '',
       description: '',
       price: 0,
+      cost: undefined,
       amount: 0,
       category: INVENTORY_CATEGORIES[0],
+      unit_type: 'piece',
       ...initialData,
     })
     setErrors({})
@@ -46,6 +57,9 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
     if (!formData.category.trim()) nextErrors.category = 'Category is required'
     if (Number.isNaN(Number(formData.price)) || Number(formData.price) < 0) {
       nextErrors.price = 'Price must be a valid non-negative number'
+    }
+    if (formData.cost !== undefined && formData.cost !== null && (Number.isNaN(Number(formData.cost)) || Number(formData.cost) < 0)) {
+      nextErrors.cost = 'Cost must be a valid non-negative number'
     }
     if (!Number.isInteger(formData.amount) || formData.amount < 0) {
       nextErrors.amount = 'Quantity must be a whole number and cannot be negative'
@@ -66,16 +80,25 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
       description: formData.description.trim(),
       category: formData.category.trim(),
       price: Number(formData.price),
+      cost: formData.cost !== undefined && formData.cost !== null ? Number(formData.cost) : undefined,
       amount: Math.max(Math.floor(formData.amount), 0),
+      unit_type: formData.unit_type ?? 'piece',
     })
   }
 
-  function handleChange(field: keyof InventoryFormData, value: string | number) {
+  function handleChange(field: keyof InventoryFormData, value: string | number | undefined) {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
+
+  // Calculate profit metrics
+  const effectiveCost = formData.cost ?? formData.price
+  const profitPerUnit = formData.price - effectiveCost
+  const profitMargin = formData.price > 0 ? (profitPerUnit / formData.price) * 100 : 0
+  const markup = effectiveCost > 0 ? (profitPerUnit / effectiveCost) * 100 : 0
+  const totalProfit = profitPerUnit * formData.amount
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -112,7 +135,7 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
 
           <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Price *</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Selling Price *</label>
               <input
                 type="number"
                 min="0"
@@ -123,6 +146,21 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
                 placeholder="0.00"
               />
               {errors.price && <p className="mt-2 text-sm text-red-600">{errors.price}</p>}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Base Cost (MSRP)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.cost ?? ''}
+                onChange={(event) => handleChange('cost', event.target.value === '' ? undefined : Number(event.target.value))}
+                className={`${inputClassName} ${errors.cost ? errorBorderClassName : normalBorderClassName}`}
+                placeholder="Supplier/landed cost (optional)"
+              />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Used to calculate profit margin</p>
+              {errors.cost && <p className="mt-2 text-sm text-red-600">{errors.cost}</p>}
             </div>
 
             <div>
@@ -137,6 +175,22 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
                 placeholder="0"
               />
               {errors.amount && <p className="mt-2 text-sm text-red-600">{errors.amount}</p>}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Unit Type</label>
+              <select
+                value={formData.unit_type ?? 'piece'}
+                onChange={(event) => handleChange('unit_type', event.target.value)}
+                className={`${inputClassName} ${errors.unit_type ? errorBorderClassName : normalBorderClassName}`}
+              >
+                <option value="piece">Piece</option>
+                <option value="liter">Liter</option>
+                <option value="kg">Kilogram</option>
+                <option value="box">Box</option>
+                <option value="pack">Pack</option>
+                <option value="set">Set</option>
+              </select>
             </div>
 
             <div>
@@ -155,6 +209,53 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
               {errors.category && <p className="mt-2 text-sm text-red-600">{errors.category}</p>}
             </div>
           </div>
+
+          {/* Profit Metrics Display */}
+          {formData.cost !== undefined && formData.cost !== null && (
+            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+              <h4 className="mb-3 font-semibold text-blue-900 dark:text-blue-100">Profit Metrics (Real-time Preview)</h4>
+              <div className="grid gap-4 md:grid-cols-4">
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Selling Price</p>
+                  <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{currencyFormatter.format(formData.price)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Unit Cost</p>
+                  <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{currencyFormatter.format(effectiveCost)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Profit per Unit</p>
+                  <p className={`text-lg font-bold ${profitPerUnit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {currencyFormatter.format(profitPerUnit)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Margin %</p>
+                  <p className={`text-lg font-bold ${profitMargin >= 20 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                    {profitMargin.toFixed(1)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Markup %</p>
+                  <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{markup.toFixed(1)}%</p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Total Profit (in stock)</p>
+                  <p className={`text-lg font-bold ${totalProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {currencyFormatter.format(totalProfit)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Total Units</p>
+                  <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{formData.amount}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Stock Retail Value</p>
+                  <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{currencyFormatter.format(formData.price * formData.amount)}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

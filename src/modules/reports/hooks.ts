@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '../../lib/queryKeys'
 import { supabase } from '../../lib/supabase'
 import { ensureNoSupabaseError } from '../../lib/supabaseRequest'
-import { InventoryLog, JobOrder, JobOrderWorkItem } from '../../types'
+import { InventoryItem, InventoryLog, JobOrder, JobOrderWorkItem } from '../../types'
 import {
   ReportsAnalyticsResult,
   ReportsDateRange,
@@ -17,6 +17,7 @@ import {
 } from './types'
 
 type JobOrderReference = Pick<JobOrder, 'id' | 'job_order_code'>
+type InventoryPricingReference = Pick<InventoryItem, 'id' | 'price' | 'cost'>
 
 function pad(value: number) {
   return value.toString().padStart(2, '0')
@@ -336,13 +337,24 @@ function resolveInventoryReferenceLabel(log: InventoryLog, jobOrderCodeMap: Map<
   return log.reference_label || 'Manual adjustment'
 }
 
-function deriveInventoryLogs(inventoryLogs: InventoryLog[], jobOrderCodeMap: Map<string, string>): ReportsInventoryLogRow[] {
+function deriveInventoryLogs(
+  inventoryLogs: InventoryLog[],
+  jobOrderCodeMap: Map<string, string>,
+  inventoryPricingMap: Map<string, { sellingPrice: number; baseCost: number | null; profitPerUnit: number | null }>
+): ReportsInventoryLogRow[] {
   return inventoryLogs
-    .map((log) => ({
-      ...log,
-      absoluteQuantity: Math.abs(Number(log.quantity_changed) || 0),
-      referenceDisplay: resolveInventoryReferenceLabel(log, jobOrderCodeMap),
-    }))
+    .map((log) => {
+      const pricing = inventoryPricingMap.get(log.inventory_item_id)
+
+      return {
+        ...log,
+        absoluteQuantity: Math.abs(Number(log.quantity_changed) || 0),
+        referenceDisplay: resolveInventoryReferenceLabel(log, jobOrderCodeMap),
+        selling_price: pricing?.sellingPrice ?? null,
+        base_cost: pricing?.baseCost ?? null,
+        profit_per_unit: pricing?.profitPerUnit ?? null,
+      }
+    })
     .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
 }
 
@@ -394,7 +406,13 @@ export function useReportsAnalytics(filters: ReportsFilters) {
           .filter((log) => log.reference_type === 'job-order' && Boolean(log.reference_id))
           .map((log) => log.reference_id as string)
       )]
+      const inventoryItemIds = [...new Set(
+        inventoryLogs
+          .map((log) => log.inventory_item_id)
+          .filter((id) => Boolean(id))
+      )]
       const jobOrderCodeMap = new Map<string, string>()
+      const inventoryPricingMap = new Map<string, { sellingPrice: number; baseCost: number | null; profitPerUnit: number | null }>()
 
       if (referenceIds.length) {
         const { data: referencedJobOrders, error: referencedJobOrdersError } = await supabase
@@ -411,6 +429,29 @@ export function useReportsAnalytics(filters: ReportsFilters) {
         })
       }
 
+      if (inventoryItemIds.length) {
+        const { data: inventoryItems, error: inventoryItemsError } = await supabase
+          .from('inventory_items')
+          .select('id, price, cost')
+          .in('id', inventoryItemIds)
+
+        if (inventoryItemsError) {
+          throw new Error(`Failed to resolve inventory pricing details: ${inventoryItemsError.message}`)
+        }
+
+        ;((inventoryItems ?? []) as InventoryPricingReference[]).forEach((item) => {
+          const sellingPrice = Number(item.price) || 0
+          const baseCost = item.cost === null || item.cost === undefined ? null : Number(item.cost)
+          const effectiveCost = baseCost ?? sellingPrice
+
+          inventoryPricingMap.set(item.id, {
+            sellingPrice,
+            baseCost,
+            profitPerUnit: sellingPrice - effectiveCost,
+          })
+        })
+      }
+
       return {
         range,
         summary: deriveSummary(jobOrders, inventoryLogs),
@@ -419,7 +460,7 @@ export function useReportsAnalytics(filters: ReportsFilters) {
         topServices: deriveTopServices(jobOrders),
         inventoryMovementTrend: deriveInventoryMovementTrend(inventoryLogs, range),
         recentInventoryMovementTrend: deriveInventoryMovementTrend(recentInventoryLogs, recentMovementRange),
-        inventoryLogs: deriveInventoryLogs(inventoryLogs, jobOrderCodeMap),
+        inventoryLogs: deriveInventoryLogs(inventoryLogs, jobOrderCodeMap, inventoryPricingMap),
       } as ReportsAnalyticsResult
     },
   })

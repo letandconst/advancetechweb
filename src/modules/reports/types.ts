@@ -65,6 +65,9 @@ export interface ReportsInventoryMovementPoint {
 export interface ReportsInventoryLogRow extends InventoryLog {
   absoluteQuantity: number
   referenceDisplay: string
+  selling_price: number | null
+  base_cost: number | null
+  profit_per_unit: number | null
 }
 
 export interface ReportsAnalyticsResult {

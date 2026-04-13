@@ -60,6 +60,11 @@ function InventoryViewPanel({
   const [quantity, setQuantity] = useState(1)
   const fieldClass = 'rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100'
   const labelClass = 'mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400'
+  const unitCost = item.cost ?? item.price
+  const profitPerUnit = item.price - unitCost
+  const marginPct = item.price > 0 ? (profitPerUnit / item.price) * 100 : 0
+  const markupPct = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : 0
+  const totalProfit = profitPerUnit * item.amount
 
   return (
     <div className="space-y-6">
@@ -82,9 +87,36 @@ function InventoryViewPanel({
       </div>
 
       <div>
-        <p className={labelClass}>Price</p>
+        <p className={labelClass}>Selling price</p>
         <p className={fieldClass}>{formatPhpCurrency(item.price)}</p>
       </div>
+
+      <div>
+        <p className={labelClass}>Base cost (MSRP)</p>
+        <p className={fieldClass}>{item.cost === undefined || item.cost === null ? 'Not set' : formatPhpCurrency(item.cost)}</p>
+      </div>
+
+      <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/40">
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Profit metrics</h4>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div>
+            <p className={labelClass}>Profit per unit</p>
+            <p className={fieldClass}>{formatPhpCurrency(profitPerUnit)}</p>
+          </div>
+          <div>
+            <p className={labelClass}>Margin</p>
+            <p className={fieldClass}>{marginPct.toFixed(1)}%</p>
+          </div>
+          <div>
+            <p className={labelClass}>Markup</p>
+            <p className={fieldClass}>{markupPct.toFixed(1)}%</p>
+          </div>
+          <div>
+            <p className={labelClass}>Total profit (in stock)</p>
+            <p className={fieldClass}>{formatPhpCurrency(totalProfit)}</p>
+          </div>
+        </div>
+      </section>
 
       <div>
         <p className={labelClass}>Current quantity</p>
@@ -196,8 +228,26 @@ export function InventoryPage() {
     },
     {
       key: 'price',
-      header: 'Price',
+      header: 'Selling Price',
       render: (value: number) => <span className="font-medium">{formatPhpCurrency(Number(value))}</span>,
+    },
+    {
+      key: 'cost',
+      header: 'Base Cost (MSRP)',
+      render: (value: number | null | undefined) => (
+        <span className="font-medium text-slate-700 dark:text-slate-300">
+          {value === undefined || value === null ? 'Not set' : formatPhpCurrency(Number(value))}
+        </span>
+      ),
+    },
+    {
+      key: 'profit_per_unit',
+      header: 'Profit / Unit',
+      render: (_value: unknown, item: InventoryItem) => {
+        const cost = item.cost ?? item.price
+        const profit = item.price - cost
+        return <span className="font-medium">{formatPhpCurrency(profit)}</span>
+      },
     },
     {
       key: 'amount',
