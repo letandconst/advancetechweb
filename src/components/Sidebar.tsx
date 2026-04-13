@@ -5,22 +5,40 @@ import { useAuth } from '../hooks'
 import { ROUTES } from '../constants'
 import { cn } from '../utils/classNames'
 
+type NavItem = { label: string; icon: React.ElementType; path: string }
+type NavGroup = { group: string; items: NavItem[] }
+
 export function Sidebar() {
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const navigation = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: ROUTES.DASHBOARD },
-    { label: 'Job Orders', icon: ClipboardList, path: ROUTES.JOB_ORDERS },
-    { label: 'Customers', icon: CarFront, path: ROUTES.CUSTOMERS },
-    { label: 'Mechanics', icon: Users, path: ROUTES.MECHANICS },
-    ...(isAdmin() ? [{ label: 'Users', icon: UserCog, path: ROUTES.USERS }] : []),
-    { label: 'Services', icon: Wrench, path: ROUTES.SERVICES },
-    { label: 'Inventory', icon: Package, path: ROUTES.INVENTORY },
-    { label: 'Reports', icon: BarChart3, path: ROUTES.REPORTS },
-    { label: 'Settings', icon: Settings, path: ROUTES.SETTINGS },
+  const navigation: NavGroup[] = [
+    {
+      group: 'Operations',
+      items: [
+        { label: 'Dashboard', icon: LayoutDashboard, path: ROUTES.DASHBOARD },
+        { label: 'Job Orders', icon: ClipboardList, path: ROUTES.JOB_ORDERS },
+        { label: 'Customers', icon: CarFront, path: ROUTES.CUSTOMERS },
+      ],
+    },
+    {
+      group: 'Workshop',
+      items: [
+        { label: 'Mechanics', icon: Users, path: ROUTES.MECHANICS },
+        { label: 'Services', icon: Wrench, path: ROUTES.SERVICES },
+        { label: 'Inventory', icon: Package, path: ROUTES.INVENTORY },
+      ],
+    },
+    {
+      group: 'Admin',
+      items: [
+        { label: 'Reports', icon: BarChart3, path: ROUTES.REPORTS },
+        ...(isAdmin() ? [{ label: 'Users', icon: UserCog, path: ROUTES.USERS }] : []),
+        { label: 'Settings', icon: Settings, path: ROUTES.SETTINGS },
+      ],
+    },
   ]
 
   return (
@@ -58,36 +76,49 @@ export function Sidebar() {
               </div>
             </div>
 
-            <nav className="space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon
-                const isActive = location.pathname === item.path
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => navigate(item.path)}
-                    title={!isSidebarOpen ? item.label : undefined}
-                    className={cn(
-                      'flex w-full items-center rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200',
-                      !isSidebarOpen && 'justify-center',
-                      isActive
-                        ? 'bg-sky-100 text-sky-700 shadow-sm dark:bg-sky-900/40 dark:text-sky-200'
-                        : 'text-slate-700 hover:bg-sky-50 hover:text-sky-700 dark:text-slate-200 dark:hover:bg-sky-950/20 dark:hover:text-sky-300'
-                    )}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span
-                      className={cn(
-                        'overflow-hidden whitespace-nowrap transition-all duration-300',
-                        isSidebarOpen ? 'ml-3 max-w-[160px] opacity-100' : 'ml-0 max-w-0 opacity-0'
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                  </button>
-                )
-              })}
+            <nav className="space-y-5">
+              {navigation.map((section) => (
+                <div key={section.group}>
+                  {isSidebarOpen ? (
+                    <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                      {section.group}
+                    </p>
+                  ) : (
+                    <div className="mx-3 mb-2 border-t border-slate-200 dark:border-slate-800" />
+                  )}
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const Icon = item.icon
+                      const isActive = location.pathname === item.path
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => navigate(item.path)}
+                          title={!isSidebarOpen ? item.label : undefined}
+                          className={cn(
+                            'flex w-full items-center rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200',
+                            !isSidebarOpen && 'justify-center',
+                            isActive
+                              ? 'bg-sky-100 text-sky-700 shadow-sm dark:bg-sky-900/40 dark:text-sky-200'
+                              : 'text-slate-700 hover:bg-sky-50 hover:text-sky-700 dark:text-slate-200 dark:hover:bg-sky-950/20 dark:hover:text-sky-300'
+                          )}
+                        >
+                          <Icon className="h-5 w-5 flex-shrink-0" />
+                          <span
+                            className={cn(
+                              'overflow-hidden whitespace-nowrap transition-all duration-300',
+                              isSidebarOpen ? 'ml-3 max-w-[160px] opacity-100' : 'ml-0 max-w-0 opacity-0'
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
           </div>
         </div>
