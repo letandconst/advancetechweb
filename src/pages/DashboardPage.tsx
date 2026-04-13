@@ -75,7 +75,7 @@ export function DashboardPage() {
     day: 'numeric',
   })
 
-  console.log ('user', user)
+ 
 
   return (
     <div className="space-y-8">

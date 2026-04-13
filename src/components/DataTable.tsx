@@ -7,9 +7,9 @@ const ACTION_COLUMN_WIDTH = 220
 const SCROLL_HINT_GAP = 16
 
 const iconButtonClassName = 'h-11 w-11 rounded-full p-0 shadow-none'
-const viewButtonClassName = `${iconButtonClassName} border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-800 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-950/60 dark:hover:text-sky-200`
-const editButtonClassName = `${iconButtonClassName} border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-200`
-const deleteButtonClassName = `${iconButtonClassName} border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/60 dark:hover:text-rose-200`
+const viewButtonClassName = `${iconButtonClassName} border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-800 dark:border-sky-600 dark:bg-gradient-to-b dark:from-sky-800/70 dark:to-sky-900/70 dark:text-sky-100 dark:hover:from-sky-700/80 dark:hover:to-sky-800/80 dark:hover:text-sky-50`
+const editButtonClassName = `${iconButtonClassName} border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-600 dark:bg-gradient-to-b dark:from-emerald-800/70 dark:to-emerald-900/70 dark:text-emerald-100 dark:hover:from-emerald-700/80 dark:hover:to-emerald-800/80 dark:hover:text-emerald-50`
+const deleteButtonClassName = `${iconButtonClassName} border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-600 dark:bg-gradient-to-b dark:from-rose-800/70 dark:to-rose-900/70 dark:text-rose-100 dark:hover:from-rose-700/80 dark:hover:to-rose-800/80 dark:hover:text-rose-50`
 
 function detectTouchDevice() {
   if (typeof window === 'undefined') return false
