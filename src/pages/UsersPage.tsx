@@ -236,20 +236,10 @@ export function UsersPage() {
         <DataTable
           data={allUsers}
           columns={columns}
-          customActions={[
-            {
-              label: 'Edit',
-              variant: 'secondary',
-              onClick: handleEdit,
-              hidden: (item: AppUser) => item.role === 'admin' || item.id === currentUser?.id,
-            },
-            {
-              label: 'Delete',
-              variant: 'danger',
-              onClick: handleDelete,
-              hidden: (item: AppUser) => item.role === 'admin' || item.id === currentUser?.id,
-            },
-          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          canEdit={(item: AppUser) => item.role !== 'admin' && item.id !== currentUser?.id}
+          canDelete={(item: AppUser) => item.role !== 'admin' && item.id !== currentUser?.id}
           emptyMessage="No users found."
         />
       </section>

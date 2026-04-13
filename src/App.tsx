@@ -66,6 +66,16 @@ function App() {
           }
         />
         <Route
+          path={ROUTES.JOB_ORDERS_VIEW}
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <JobOrderFormPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path={ROUTES.JOB_ORDERS_EDIT}
           element={
             <ProtectedRoute>

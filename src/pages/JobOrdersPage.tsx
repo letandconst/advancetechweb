@@ -59,7 +59,7 @@ export function JobOrdersPage() {
     setPage(1)
   }, [filters])
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       key: 'job_order_code',
       header: 'JO ID',
@@ -95,7 +95,7 @@ export function JobOrdersPage() {
       header: 'Total',
       render: (value: number) => <span className="font-semibold">{formatPhpCurrency(value)}</span>,
     },
-  ]
+  ], [])
 
   function handleFilterChange<K extends keyof JobOrderFilters>(key: K, value: JobOrderFilters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -110,7 +110,11 @@ export function JobOrdersPage() {
   }
 
   function handleEdit(item: JobOrder) {
-    navigate(`/job-orders/${item.id}/edit`)
+    navigate(ROUTES.JOB_ORDERS_EDIT.replace(':id', item.id))
+  }
+
+  function handleView(item: JobOrder) {
+    navigate(ROUTES.JOB_ORDERS_VIEW.replace(':id', item.id))
   }
 
   function handleCreate() {
@@ -265,13 +269,15 @@ export function JobOrdersPage() {
         <DataTable
           data={items}
           columns={columns}
-          onView={handleEdit}
+          onView={handleView}
           onEdit={isAdmin() ? handleEdit : undefined}
+          canEdit={(item) => item.status !== 'completed'}
           onDelete={isAdmin() ? handleDelete : undefined}
           customActions={[
             {
               icon: <Printer className="h-4 w-4" />,
               label: 'Print',
+              showLabel: true,
               onClick: handlePrint,
               hidden: (item) => item.status !== 'completed',
             },

@@ -1,6 +1,8 @@
-import { ReactNode, useState } from 'react'
+import { ReactNode, createContext, useContext, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '../utils/classNames'
+
+const DropdownContext = createContext<{ close: () => void } | null>(null)
 
 interface DropdownProps {
   trigger: ReactNode
@@ -32,7 +34,9 @@ export function Dropdown({ trigger, children, align = 'right' }: DropdownProps) 
               align === 'left' ? 'left-0' : 'right-0'
             )}
           >
-            {children}
+            <DropdownContext.Provider value={{ close: () => setIsOpen(false) }}>
+              {children}
+            </DropdownContext.Provider>
           </div>
         </>
       )}
@@ -47,10 +51,17 @@ interface DropdownItemProps {
 }
 
 export function DropdownItem({ children, onClick, icon }: DropdownItemProps) {
+  const context = useContext(DropdownContext)
+
+  function handleClick() {
+    onClick?.()
+    context?.close()
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-slate-700 transition-colors duration-200 hover:bg-sky-50 hover:text-sky-700 dark:text-slate-200 dark:hover:bg-sky-950/30 dark:hover:text-sky-300"
     >
       {icon && <span className="flex-shrink-0 opacity-60">{icon}</span>}

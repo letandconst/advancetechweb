@@ -12,6 +12,7 @@ interface MechanicFormProps {
 }
 
 export function MechanicForm({ initialData, onSubmit, onCancel, loading = false }: MechanicFormProps) {
+  const isEdit = Boolean(initialData)
   const [formData, setFormData] = useState<MechanicFormData>({
     name: '',
     birthday: '',
@@ -177,6 +178,7 @@ export function MechanicForm({ initialData, onSubmit, onCancel, loading = false 
                 onChange={(e) => handleChange('name', e.target.value)}
                 className={`${inputClassName} ${errors.name ? errorBorderClassName : normalBorderClassName}`}
                 placeholder="Enter full name"
+                disabled={isEdit}
               />
               {errors.name && <p className="mt-2 text-sm text-red-600">{errors.name}</p>}
             </div>
@@ -190,6 +192,7 @@ export function MechanicForm({ initialData, onSubmit, onCancel, loading = false 
                 value={formData.birthday}
                 onChange={(e) => handleChange('birthday', e.target.value)}
                 className={`${inputClassName} ${errors.birthday ? errorBorderClassName : normalBorderClassName}`}
+                disabled={isEdit}
               />
               {errors.birthday && <p className="mt-2 text-sm text-red-600">{errors.birthday}</p>}
             </div>

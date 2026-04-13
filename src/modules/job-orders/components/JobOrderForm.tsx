@@ -15,7 +15,7 @@ type WorkRequestedRow = JobOrderWorkItem & {
 }
 
 interface JobOrderFormProps {
-  mode: 'create' | 'edit'
+  mode: 'create' | 'edit' | 'view'
   initialData: JobOrderFormData
   mechanics: Mechanic[]
   services: Service[]
@@ -52,6 +52,7 @@ export function JobOrderForm({
   onSubmit,
   onCancel,
 }: JobOrderFormProps) {
+  const isReadOnly = mode === 'view'
   const serviceById = useMemo(() => Object.fromEntries(services.map((service) => [service.id, service])), [services])
 
   const [customerName, setCustomerName] = useState(initialData.customer_name)
@@ -93,7 +94,7 @@ export function JobOrderForm({
   const [discountValue, setDiscountValue] = useState(initialData.discount_value)
   const [errors, setErrors] = useState<string[]>([])
 
-  const inputClassName = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950'
+  const inputClassName = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-default disabled:opacity-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950 dark:disabled:bg-slate-800 dark:disabled:text-slate-100'
 
   const fluidById = useMemo(() => Object.fromEntries(fluidOptions.map((item) => [item.id, item])), [fluidOptions])
   const partById = useMemo(() => Object.fromEntries(partOptions.map((item) => [item.id, item])), [partOptions])
@@ -272,6 +273,8 @@ export function JobOrderForm({
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
+    if (isReadOnly) return
+
     if (!validateForm()) return
 
     const selectedMechanic = mechanics.find((mechanic) => mechanic.id === mechanicId)
@@ -326,19 +329,19 @@ export function JobOrderForm({
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Customer name *</label>
-            <input className={inputClassName} value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+            <input className={inputClassName} value={customerName} onChange={(e) => setCustomerName(e.target.value)} readOnly={isReadOnly} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Address *</label>
-            <input className={inputClassName} value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
+            <input className={inputClassName} value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} readOnly={isReadOnly} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Make / Model *</label>
-            <input className={inputClassName} placeholder="e.g., Honda City" value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} />
+            <input className={inputClassName} placeholder="e.g., Honda City" value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} readOnly={isReadOnly} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Plate number *</label>
-            <input className={inputClassName} value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} />
+            <input className={inputClassName} value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} readOnly={isReadOnly} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Job order ID</label>
@@ -346,11 +349,11 @@ export function JobOrderForm({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Date *</label>
-            <input type="date" className={inputClassName} value={jobDate} onChange={(e) => setJobDate(e.target.value)} />
+            <input type="date" className={inputClassName} value={jobDate} onChange={(e) => setJobDate(e.target.value)} readOnly={isReadOnly} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Mechanic *</label>
-            <select className={inputClassName} value={mechanicId} onChange={(e) => setMechanicId(e.target.value)}>
+            <select className={inputClassName} value={mechanicId} onChange={(e) => setMechanicId(e.target.value)} disabled={isReadOnly}>
               <option value="">Select mechanic</option>
               {mechanics.map((mechanic) => (
                 <option key={mechanic.id} value={mechanic.id}>{mechanic.name}</option>
@@ -359,7 +362,7 @@ export function JobOrderForm({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
-            <select className={inputClassName} value={status} onChange={(e) => setStatus(e.target.value as JobOrderStatus)}>
+            <select className={inputClassName} value={status} onChange={(e) => setStatus(e.target.value as JobOrderStatus)} disabled={isReadOnly}>
               <option value="draft">Draft</option>
               <option value="in_progress">In progress</option>
               <option value="completed">Completed</option>
@@ -372,7 +375,7 @@ export function JobOrderForm({
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Work requested</h3>
-          <Button type="button" variant="secondary" size="sm" onClick={addWorkRequestedRow}>Add row</Button>
+          <Button type="button" variant="secondary" size="sm" onClick={addWorkRequestedRow} disabled={isReadOnly}>Add row</Button>
         </div>
 
         <div className="mt-4 space-y-3">
@@ -382,6 +385,7 @@ export function JobOrderForm({
                 className={inputClassName}
                 value={row.mode}
                 onChange={(e) => handleWorkRequestedTypeChange(row.id, e.target.value as 'service' | 'adhoc')}
+                disabled={isReadOnly}
               >
                 <option value="service">Service</option>
                 <option value="adhoc">Ad hoc</option>
@@ -392,6 +396,7 @@ export function JobOrderForm({
                   className={inputClassName}
                   value={row.serviceId}
                   onChange={(e) => handleWorkRequestedServiceChange(row.id, e.target.value)}
+                  disabled={isReadOnly}
                 >
                   <option value="">Select service</option>
                   {services.map((service) => (
@@ -404,6 +409,7 @@ export function JobOrderForm({
                   placeholder="Ad hoc work description"
                   value={row.service_name}
                   onChange={(e) => updateWorkRequestedRow(row.id, { service_name: e.target.value })}
+                  readOnly={isReadOnly}
                 />
               )}
 
@@ -415,12 +421,13 @@ export function JobOrderForm({
                 placeholder="Amount"
                 value={row.amount}
                 onChange={(e) => updateWorkRequestedRow(row.id, { amount: Number(e.target.value || 0) })}
+                readOnly={isReadOnly}
               />
               <Button
                 type="button"
                 variant="danger"
                 size="sm"
-                disabled={workRequested.length <= 1}
+                disabled={isReadOnly || workRequested.length <= 1}
                 onClick={() => removeWorkRequestedRow(row.id)}
               >
                 Remove
@@ -433,7 +440,7 @@ export function JobOrderForm({
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Oil and fuels</h3>
-          <Button type="button" variant="secondary" size="sm" onClick={() => addInventoryRow('fluids')}>Add row</Button>
+          <Button type="button" variant="secondary" size="sm" onClick={() => addInventoryRow('fluids')} disabled={isReadOnly}>Add row</Button>
         </div>
         <div className="mt-4 space-y-3">
           {oilsAndFuels.map((row) => (
@@ -442,6 +449,7 @@ export function JobOrderForm({
                 className={inputClassName}
                 value={row.inventory_item_id}
                 onChange={(e) => updateInventoryRow('fluids', row.id, { inventory_item_id: e.target.value })}
+                disabled={isReadOnly}
               >
                 <option value="">Select fluid inventory item</option>
                 {fluidOptions.map((item) => (
@@ -455,8 +463,9 @@ export function JobOrderForm({
                 className={inputClassName}
                 value={row.quantity}
                 onChange={(e) => updateInventoryRow('fluids', row.id, { quantity: Math.max(Number(e.target.value || 1), 1) })}
+                readOnly={isReadOnly}
               />
-              <Button type="button" variant="danger" size="sm" disabled={oilsAndFuels.length <= 1} onClick={() => removeInventoryRow('fluids', row.id)}>
+              <Button type="button" variant="danger" size="sm" disabled={isReadOnly || oilsAndFuels.length <= 1} onClick={() => removeInventoryRow('fluids', row.id)}>
                 Remove
               </Button>
             </div>
@@ -467,7 +476,7 @@ export function JobOrderForm({
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Parts</h3>
-          <Button type="button" variant="secondary" size="sm" onClick={() => addInventoryRow('parts')}>Add row</Button>
+          <Button type="button" variant="secondary" size="sm" onClick={() => addInventoryRow('parts')} disabled={isReadOnly}>Add row</Button>
         </div>
         <div className="mt-4 space-y-3">
           {parts.map((row) => (
@@ -476,6 +485,7 @@ export function JobOrderForm({
                 className={inputClassName}
                 value={row.inventory_item_id}
                 onChange={(e) => updateInventoryRow('parts', row.id, { inventory_item_id: e.target.value })}
+                disabled={isReadOnly}
               >
                 <option value="">Select part inventory item</option>
                 {partOptions.map((item) => (
@@ -489,8 +499,9 @@ export function JobOrderForm({
                 className={inputClassName}
                 value={row.quantity}
                 onChange={(e) => updateInventoryRow('parts', row.id, { quantity: Math.max(Number(e.target.value || 1), 1) })}
+                readOnly={isReadOnly}
               />
-              <Button type="button" variant="danger" size="sm" disabled={parts.length <= 1} onClick={() => removeInventoryRow('parts', row.id)}>
+              <Button type="button" variant="danger" size="sm" disabled={isReadOnly || parts.length <= 1} onClick={() => removeInventoryRow('parts', row.id)}>
                 Remove
               </Button>
             </div>
@@ -511,16 +522,16 @@ export function JobOrderForm({
         <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Discount options</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('fixed', 500)}>PHP 500 off</Button>
-            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('fixed', 1000)}>PHP 1000 off</Button>
-            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('percentage', 5)}>5%</Button>
-            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('percentage', 10)}>10%</Button>
-            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('percentage', 15)}>15%</Button>
-            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('none', 0)}>No discount</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('fixed', 500)} disabled={isReadOnly}>PHP 500 off</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('fixed', 1000)} disabled={isReadOnly}>PHP 1000 off</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('percentage', 5)} disabled={isReadOnly}>5%</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('percentage', 10)} disabled={isReadOnly}>10%</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('percentage', 15)} disabled={isReadOnly}>15%</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyDiscountPreset('none', 0)} disabled={isReadOnly}>No discount</Button>
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <select className={inputClassName} value={discountType} onChange={(e) => setDiscountType(e.target.value as JobOrderDiscountType)}>
+            <select className={inputClassName} value={discountType} onChange={(e) => setDiscountType(e.target.value as JobOrderDiscountType)} disabled={isReadOnly}>
               <option value="none">No discount</option>
               <option value="fixed">Fixed (PHP)</option>
               <option value="percentage">Percentage (%)</option>
@@ -533,6 +544,7 @@ export function JobOrderForm({
               value={discountValue}
               onChange={(e) => setDiscountValue(Number(e.target.value || 0))}
               placeholder={discountType === 'percentage' ? 'e.g., 10' : 'e.g., 500'}
+              readOnly={isReadOnly}
             />
           </div>
         </div>
@@ -545,8 +557,8 @@ export function JobOrderForm({
       </section>
 
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-end">
-        <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" disabled={loading}>{loading ? 'Saving...' : mode === 'create' ? 'Create job order' : 'Update job order'}</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>{isReadOnly ? 'Back' : 'Cancel'}</Button>
+        {!isReadOnly && <Button type="submit" disabled={loading}>{loading ? 'Saving...' : mode === 'create' ? 'Create job order' : 'Update job order'}</Button>}
       </div>
     </form>
   )

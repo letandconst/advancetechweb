@@ -1,5 +1,5 @@
 import { ArrowLeft, AlertCircle, ClipboardList } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { matchPath, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button, LoadingSpinner } from '../components'
 import { ROUTES } from '../constants'
 import {
@@ -46,8 +46,11 @@ function buildDefaultFormData(jobOrderCode: string): JobOrderFormData {
 
 export function JobOrderFormPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams<{ id: string }>()
-  const isEditMode = Boolean(id)
+  const isEditRoute = Boolean(matchPath({ path: ROUTES.JOB_ORDERS_EDIT, end: true }, location.pathname))
+  const pageMode = !id ? 'create' : isEditRoute ? 'edit' : 'view'
+  const isExistingJobOrder = Boolean(id)
 
   const { data: nextCode, isLoading: isLoadingCode, error: codeError } = useNextJobOrderCode()
   const { data: jobOrder, isLoading: isLoadingJobOrder, error: jobOrderError } = useJobOrder(id)
@@ -64,13 +67,13 @@ export function JobOrderFormPage() {
     isLoadingServices ||
     isLoadingFluids ||
     isLoadingParts ||
-    (isEditMode ? isLoadingJobOrder : isLoadingCode)
+    (isExistingJobOrder ? isLoadingJobOrder : isLoadingCode)
 
   const hasError = codeError || jobOrderError
 
   async function handleSubmit(data: JobOrderFormData) {
     try {
-      if (isEditMode && id && jobOrder) {
+      if (pageMode === 'edit' && id && jobOrder) {
         await updateJobOrder.mutateAsync({ ...data, id, previousStatus: jobOrder.status })
       } else {
         await createJobOrder.mutateAsync(data)
@@ -83,7 +86,7 @@ export function JobOrderFormPage() {
   }
 
   if (isLoading) {
-    return <LoadingSpinner message={isEditMode ? 'Loading job order...' : 'Preparing new job order...'} />
+    return <LoadingSpinner message={isExistingJobOrder ? 'Loading job order...' : 'Preparing new job order...'} />
   }
 
   if (hasError) {
@@ -99,7 +102,7 @@ export function JobOrderFormPage() {
     )
   }
 
-  const baseData = isEditMode && jobOrder
+  const baseData = isExistingJobOrder && jobOrder
     ? ({ ...jobOrder, inventory_consumed_at: undefined } as unknown as JobOrderFormData)
     : buildDefaultFormData(nextCode ?? 'JO-00001')
 
@@ -120,18 +123,20 @@ export function JobOrderFormPage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">Workshop operations</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
-              {isEditMode ? 'Edit job order' : 'Create job order'}
+              {pageMode === 'create' ? 'Create job order' : pageMode === 'edit' ? 'Edit job order' : 'View job order'}
             </h1>
           </div>
         </div>
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-          Fill in customer details, labor items, oils, and parts. Totals and discount are calculated automatically.
+          {pageMode === 'view'
+            ? 'Review customer details, labor items, oils, and parts in read-only mode.'
+            : 'Fill in customer details, labor items, oils, and parts. Totals and discount are calculated automatically.'}
         </p>
       </section>
 
       <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <JobOrderForm
-          mode={isEditMode ? 'edit' : 'create'}
+          mode={pageMode}
           initialData={baseData}
           mechanics={mechanics ?? []}
           services={services ?? []}

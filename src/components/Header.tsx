@@ -18,7 +18,7 @@ export function Header() {
   const subtext = user?.email || (user?.username ? `@${user.username}` : '')
 
   return (
-    <header className="flex items-center justify-between mb-6">
+    <header className="mb-6 flex items-center justify-between">
       <div>
         <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
           Dashboard
