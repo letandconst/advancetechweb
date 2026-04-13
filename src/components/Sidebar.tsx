@@ -1,4 +1,4 @@
-import { LayoutDashboard, Settings, ChevronLeft, ChevronRight, Users, BarChart3, Package, Wrench, ClipboardList, UserCog } from 'lucide-react'
+import { LayoutDashboard, Settings, ChevronLeft, ChevronRight, Users, BarChart3, Package, Wrench, ClipboardList, UserCog, CarFront } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUIStore } from '../store'
 import { useAuth } from '../hooks'
@@ -14,6 +14,7 @@ export function Sidebar() {
   const navigation = [
     { label: 'Dashboard', icon: LayoutDashboard, path: ROUTES.DASHBOARD },
     { label: 'Job Orders', icon: ClipboardList, path: ROUTES.JOB_ORDERS },
+    { label: 'Customers', icon: CarFront, path: ROUTES.CUSTOMERS },
     { label: 'Mechanics', icon: Users, path: ROUTES.MECHANICS },
     ...(isAdmin() ? [{ label: 'Users', icon: UserCog, path: ROUTES.USERS }] : []),
     { label: 'Services', icon: Wrench, path: ROUTES.SERVICES },

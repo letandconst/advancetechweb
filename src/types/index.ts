@@ -74,6 +74,43 @@ export type InventoryLog = {
   updated_at: string
 }
 
+export type Customer = {
+  id: string
+  customer_name: string
+  address: string
+  created_at: string
+  updated_at: string
+}
+
+export type CustomerFormData = Omit<Customer, 'id' | 'created_at' | 'updated_at'>
+
+export type CustomerVehicle = {
+  id: string
+  customer_id: string
+  car_make: string
+  car_model: string
+  year: number
+  plate_number: string
+  is_primary: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type CustomerVehicleFormData = Omit<CustomerVehicle, 'id' | 'created_at' | 'updated_at'>
+
+export type VehicleMake = {
+  id: string
+  name: string
+  is_active: boolean
+}
+
+export type VehicleModel = {
+  id: string
+  make_id: string
+  name: string
+  is_active: boolean
+}
+
 export type JobOrderStatus = 'draft' | 'in_progress' | 'completed' | 'cancelled'
 export type JobOrderDiscountType = 'none' | 'fixed' | 'percentage'
 
@@ -96,9 +133,13 @@ export type JobOrder = {
   id: string
   job_order_code: string
   job_date: string
+  customer_id?: string | null
+  customer_vehicle_id?: string | null
   customer_name: string
   customer_address: string
   vehicle_make: string
+  vehicle_model?: string | null
+  vehicle_year?: number | null
   plate_number: string
   mechanic_id: string | null
   mechanic_name: string | null

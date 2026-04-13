@@ -14,6 +14,7 @@ import {
   useServiceOptions,
   useUpdateJobOrder,
 } from '../modules/job-orders'
+import { useCustomers } from '../modules/customers'
 
 function todayDateString() {
   return new Date().toISOString().slice(0, 10)
@@ -23,9 +24,13 @@ function buildDefaultFormData(jobOrderCode: string): JobOrderFormData {
   return {
     job_order_code: jobOrderCode,
     job_date: todayDateString(),
+    customer_id: null,
+    customer_vehicle_id: null,
     customer_name: '',
     customer_address: '',
     vehicle_make: '',
+    vehicle_model: null,
+    vehicle_year: null,
     plate_number: '',
     mechanic_id: null,
     mechanic_name: null,
@@ -58,6 +63,7 @@ export function JobOrderFormPage() {
   const { data: services, isLoading: isLoadingServices } = useServiceOptions()
   const { data: fluidOptions, isLoading: isLoadingFluids } = useFluidInventoryOptions()
   const { data: partOptions, isLoading: isLoadingParts } = usePartsInventoryOptions()
+  const { data: customers, isLoading: isLoadingCustomers } = useCustomers('')
 
   const createJobOrder = useCreateJobOrder()
   const updateJobOrder = useUpdateJobOrder()
@@ -67,6 +73,7 @@ export function JobOrderFormPage() {
     isLoadingServices ||
     isLoadingFluids ||
     isLoadingParts ||
+    isLoadingCustomers ||
     (isExistingJobOrder ? isLoadingJobOrder : isLoadingCode)
 
   const hasError = codeError || jobOrderError
@@ -138,6 +145,7 @@ export function JobOrderFormPage() {
         <JobOrderForm
           mode={pageMode}
           initialData={baseData}
+          customers={customers ?? []}
           mechanics={mechanics ?? []}
           services={services ?? []}
           fluidOptions={fluidOptions ?? []}

@@ -12,7 +12,7 @@ import { InventoryPage } from './pages/InventoryPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
-import { UsersPage } from './pages'
+import { CustomersPage, UsersPage } from './pages'
 import { ROUTES } from './constants'
 import { useAuth } from './hooks'
 
@@ -91,6 +91,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <MechanicsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.CUSTOMERS}
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <CustomersPage />
               </Layout>
             </ProtectedRoute>
           }

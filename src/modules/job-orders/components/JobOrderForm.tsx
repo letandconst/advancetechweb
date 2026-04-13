@@ -1,7 +1,8 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { Button } from '../../../components'
 import { InventoryItem, Mechanic, Service } from '../../../types'
 import { JobOrderDiscountType, JobOrderFormData, JobOrderInventoryItem, JobOrderStatus, JobOrderWorkItem } from '../types'
+import { CustomerWithVehicles } from '../../customers'
 
 type InventoryDraftRow = {
   id: string
@@ -17,6 +18,7 @@ type WorkRequestedRow = JobOrderWorkItem & {
 interface JobOrderFormProps {
   mode: 'create' | 'edit' | 'view'
   initialData: JobOrderFormData
+  customers: CustomerWithVehicles[]
   mechanics: Mechanic[]
   services: Service[]
   fluidOptions: InventoryItem[]
@@ -44,6 +46,7 @@ function toInventoryDraftRows(items: JobOrderInventoryItem[]) {
 export function JobOrderForm({
   mode,
   initialData,
+  customers,
   mechanics,
   services,
   fluidOptions,
@@ -57,7 +60,11 @@ export function JobOrderForm({
 
   const [customerName, setCustomerName] = useState(initialData.customer_name)
   const [customerAddress, setCustomerAddress] = useState(initialData.customer_address)
+  const [customerId, setCustomerId] = useState(initialData.customer_id ?? '')
+  const [customerVehicleId, setCustomerVehicleId] = useState(initialData.customer_vehicle_id ?? '')
   const [vehicleMake, setVehicleMake] = useState(initialData.vehicle_make)
+  const [vehicleModel, setVehicleModel] = useState(initialData.vehicle_model ?? '')
+  const [vehicleYear, setVehicleYear] = useState<number | ''>(initialData.vehicle_year ?? '')
   const [plateNumber, setPlateNumber] = useState(initialData.plate_number)
   const [jobOrderCode] = useState(initialData.job_order_code)
   const [jobDate, setJobDate] = useState(initialData.job_date)
@@ -93,6 +100,32 @@ export function JobOrderForm({
   const [discountType, setDiscountType] = useState<JobOrderDiscountType>(initialData.discount_type)
   const [discountValue, setDiscountValue] = useState(initialData.discount_value)
   const [errors, setErrors] = useState<string[]>([])
+
+  const selectedCustomer = useMemo(
+    () => customers.find((customer) => customer.id === customerId) ?? null,
+    [customers, customerId]
+  )
+
+  const selectedVehicle = useMemo(
+    () => selectedCustomer?.vehicles.find((vehicle) => vehicle.id === customerVehicleId) ?? null,
+    [selectedCustomer, customerVehicleId]
+  )
+
+  useEffect(() => {
+    if (!selectedCustomer) return
+
+    setCustomerName(selectedCustomer.customer_name)
+    setCustomerAddress(selectedCustomer.address)
+  }, [selectedCustomer])
+
+  useEffect(() => {
+    if (!selectedVehicle) return
+
+    setVehicleMake(selectedVehicle.car_make)
+    setVehicleModel(selectedVehicle.car_model)
+    setVehicleYear(selectedVehicle.year)
+    setPlateNumber(selectedVehicle.plate_number)
+  }, [selectedVehicle])
 
   const inputClassName = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-default disabled:opacity-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-950 dark:disabled:bg-slate-800 dark:disabled:text-slate-100'
 
@@ -282,9 +315,13 @@ export function JobOrderForm({
     const payload: JobOrderFormData = {
       job_order_code: jobOrderCode,
       job_date: jobDate,
+      customer_id: customerId || null,
+      customer_vehicle_id: customerVehicleId || null,
       customer_name: customerName.trim(),
       customer_address: customerAddress.trim(),
       vehicle_make: vehicleMake.trim(),
+      vehicle_model: vehicleModel.trim() || null,
+      vehicle_year: vehicleYear === '' ? null : vehicleYear,
       plate_number: plateNumber.trim(),
       mechanic_id: mechanicId,
       mechanic_name: selectedMechanic?.name ?? null,
@@ -328,6 +365,39 @@ export function JobOrderForm({
         <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Customer details</h3>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Select customer</label>
+            <select
+              className={inputClassName}
+              value={customerId}
+              onChange={(e) => {
+                setCustomerId(e.target.value)
+                setCustomerVehicleId('')
+              }}
+              disabled={isReadOnly}
+            >
+              <option value="">Manual entry</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>{customer.customer_name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Select customer vehicle</label>
+            <select
+              className={inputClassName}
+              value={customerVehicleId}
+              onChange={(e) => setCustomerVehicleId(e.target.value)}
+              disabled={isReadOnly || !selectedCustomer}
+            >
+              <option value="">Manual vehicle entry</option>
+              {(selectedCustomer?.vehicles ?? []).map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.year} {vehicle.car_make} {vehicle.car_model} • {vehicle.plate_number}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Customer name *</label>
             <input className={inputClassName} value={customerName} onChange={(e) => setCustomerName(e.target.value)} readOnly={isReadOnly} />
           </div>
@@ -336,8 +406,16 @@ export function JobOrderForm({
             <input className={inputClassName} value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} readOnly={isReadOnly} />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Make / Model *</label>
-            <input className={inputClassName} placeholder="e.g., Honda City" value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} readOnly={isReadOnly} />
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Car make *</label>
+            <input className={inputClassName} placeholder="e.g., Toyota" value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} readOnly={isReadOnly} />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Car model</label>
+            <input className={inputClassName} placeholder="e.g., Vios" value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} readOnly={isReadOnly} />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Year</label>
+            <input type="number" className={inputClassName} value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value === '' ? '' : Number(e.target.value))} readOnly={isReadOnly} />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Plate number *</label>
