@@ -8,7 +8,6 @@ import {
   Package,
   Plus,
   RefreshCw,
-  Settings,
   Wallet,
   Wrench,
   TrendingUp,
@@ -378,19 +377,6 @@ export function DashboardPage() {
             </div>
             <ChevronRight className="h-4 w-4 text-slate-400" />
           </button>
-          {isAdmin() && (
-            <button
-              onClick={() => navigate(ROUTES.SETTINGS)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-sky-900/60 dark:hover:bg-sky-950/20"
-            >
-              <Settings className="h-5 w-5 flex-shrink-0 text-slate-500 dark:text-slate-400" />
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Settings</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Configure system settings</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-          )}
         </div>
       </section>
     </div>

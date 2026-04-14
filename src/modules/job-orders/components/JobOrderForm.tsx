@@ -40,11 +40,11 @@ function formatPhpCurrency(value: number) {
   }).format(value)
 }
 
-function toInventoryDraftRows(items: JobOrderInventoryItem[]) {
+function toInventoryDraftRows(items: JobOrderInventoryItem[]): InventoryDraftRow[] {
   return items.length
     ? items.map((item) => ({
       id: item.id,
-      mode: item.inventory_item_id.startsWith('adhoc-') ? 'adhoc' : 'inventory',
+      mode: item.inventory_item_id.startsWith('adhoc-') ? 'adhoc' as const : 'inventory' as const,
       inventory_item_id: item.inventory_item_id.startsWith('adhoc-') ? '' : item.inventory_item_id,
       adhoc_name: item.inventory_item_id.startsWith('adhoc-') ? item.item_name : '',
       unit_price: Number(item.unit_price ?? 0),

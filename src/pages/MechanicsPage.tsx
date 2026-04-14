@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, AlertCircle, CheckCircle, ShieldAlert, Users, Wrench, Phone, MapPin, Cake, Zap, UserCheck } from 'lucide-react'
-import { Button, DataTable, LoadingSpinner, Modal } from '../components'
+import { Button, LoadingSpinner, Modal } from '../components'
+import { DataTable } from '../components/DataTable'
 import { useAuth } from '../hooks'
 import { Mechanic, MechanicFormData } from '../modules/mechanics/types'
 import { useMechanics, useCreateMechanic, useUpdateMechanic, useDeactivateMechanic } from '../modules/mechanics/hooks'

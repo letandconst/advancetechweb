@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AlertCircle, CheckCircle, Plus, ShieldCheck, UserCog, Users } from 'lucide-react'
-import { Button, DataTable, LoadingSpinner, Modal } from '../components'
+import { Button, LoadingSpinner, Modal } from '../components'
+import { DataTable } from '../components/DataTable'
 import { useAuth } from '../hooks'
 import { AppUser, UserForm, UserFormData, useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '../modules/users'
 

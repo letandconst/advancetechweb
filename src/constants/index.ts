@@ -34,7 +34,6 @@ export const ROUTES = {
   SERVICES: '/services',
   INVENTORY: '/inventory',
   REPORTS: '/reports',
-  SETTINGS: '/settings',
   PROFILE: '/profile',
   LOGIN: '/login'
 } as const
@@ -60,6 +59,15 @@ export const INVENTORY_CATEGORIES = [
   'Tools',
   'Consumables',
   'Other'
+] as const
+
+export const INVENTORY_UNIT_TYPES = [
+  'piece',
+  'liter',
+  'kg',
+  'box',
+  'pack',
+  'set'
 ] as const
 
 export const LOW_STOCK_THRESHOLD = 5

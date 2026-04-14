@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Car, CheckCircle, Plus, Users } from 'lucide-react'
-import { Button, DataTable, LoadingSpinner, Modal } from '../components'
+import { Button, LoadingSpinner, Modal } from '../components'
+import { DataTable } from '../components/DataTable'
 import { ROUTES } from '../constants'
 import { useAuth } from '../hooks'
 import {

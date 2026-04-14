@@ -1,7 +1,8 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, CheckCircle, Package, Plus, ShieldAlert, Boxes, Search, Tag, ArrowUpCircle, Upload } from 'lucide-react'
-import { Button, DataTable, LoadingSpinner, Modal } from '../components'
-import { INVENTORY_CATEGORIES } from '../constants'
+import { Button, LoadingSpinner, Modal } from '../components'
+import { DataTable } from '../components/DataTable'
+import { INVENTORY_CATEGORIES, INVENTORY_UNIT_TYPES } from '../constants'
 import { useAuth } from '../hooks'
 import { supabase } from '../lib/supabase'
 import { useAppSettings } from '../modules/settings'
@@ -16,8 +17,17 @@ import {
   useUpdateInventoryItem,
 } from '../modules/inventory/hooks'
 import { InventoryFormData, InventoryItem } from '../modules/inventory/types'
-import { downloadCsv } from '../utils/csv'
-import { parseSpreadsheetFile, toNumberOrNull } from '../utils/spreadsheet'
+import { downloadSpreadsheetTemplate, getSpreadsheetValue, normalizeSpreadsheetHeader, parseSpreadsheetFile, toNumberOrNull } from '../utils/spreadsheet'
+
+const INVENTORY_IMPORT_ALIASES = {
+  name: ['Item', 'Name'],
+  description: ['Description'],
+  price: ['Selling Price', 'Price'],
+  amount: ['Stock', 'Amount'],
+  category: ['Category'],
+  cost: ['Base Cost (MSRP)', 'Cost'],
+  unitType: ['Unit Type', 'Unit_Type', 'unit_type'],
+} as const
 
 function formatPhpCurrency(value: number) {
   return new Intl.NumberFormat('en-PH', {
@@ -344,32 +354,38 @@ export function InventoryPage() {
         return
       }
 
-      const requiredColumns = ['name', 'description', 'price', 'amount', 'category']
       const availableColumns = new Set(Object.keys(nonEmptyRows[0]))
-      const missingColumns = requiredColumns.filter((column) => !availableColumns.has(column))
+      const missingColumns = [
+        { label: 'Item', aliases: INVENTORY_IMPORT_ALIASES.name },
+        { label: 'Description', aliases: INVENTORY_IMPORT_ALIASES.description },
+        { label: 'Selling Price', aliases: INVENTORY_IMPORT_ALIASES.price },
+        { label: 'Stock', aliases: INVENTORY_IMPORT_ALIASES.amount },
+        { label: 'Category', aliases: INVENTORY_IMPORT_ALIASES.category },
+      ].filter(({ aliases }) => !aliases.some((alias) => availableColumns.has(normalizeSpreadsheetHeader(alias))))
 
       if (missingColumns.length) {
         setStatusMessage({
           type: 'error',
-          message: `Missing required columns: ${missingColumns.join(', ')}. Expected columns: name, description, price, amount, category, cost(optional), unit_type(optional).`,
+          message: `Missing required columns: ${missingColumns.map((column) => column.label).join(', ')}. Expected columns: Item, Description, Selling Price, Stock, Category, Base Cost (MSRP) (optional), Unit Type (optional).`,
         })
         return
       }
 
       const allowedCategories = new Set(INVENTORY_CATEGORIES.map((category) => category.toLowerCase()))
+      const allowedUnitTypes = new Set(INVENTORY_UNIT_TYPES.map((unitType) => unitType.toLowerCase()))
       const errors: string[] = []
       const payload: InventoryFormData[] = []
       const seenItems = new Set<string>()
 
       nonEmptyRows.forEach((row, index) => {
         const rowNumber = index + 2
-        const name = row.name?.trim() ?? ''
-        const description = row.description?.trim() ?? ''
-        const category = row.category?.trim() ?? ''
-        const price = toNumberOrNull(row.price ?? '')
-        const amount = toNumberOrNull(row.amount ?? '')
-        const cost = toNumberOrNull(row.cost ?? '')
-        const unitType = row.unit_type?.trim() || undefined
+        const name = getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.name).trim()
+        const description = getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.description).trim()
+        const category = getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.category).trim()
+        const price = toNumberOrNull(getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.price))
+        const amount = toNumberOrNull(getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.amount))
+        const cost = toNumberOrNull(getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.cost))
+        const unitType = getSpreadsheetValue(row, INVENTORY_IMPORT_ALIASES.unitType).trim() || undefined
 
         const rowErrors: string[] = []
         const normalizedKey = `${normalizeText(name)}|${normalizeText(category)}`
@@ -379,6 +395,9 @@ export function InventoryPage() {
         if (!category) rowErrors.push(`Row ${rowNumber}: category is required.`)
         if (category && !allowedCategories.has(category.toLowerCase())) {
           rowErrors.push(`Row ${rowNumber}: category must match one of the configured categories.`)
+        }
+        if (unitType && !allowedUnitTypes.has(unitType.toLowerCase())) {
+          rowErrors.push(`Row ${rowNumber}: unit type must match one of the configured unit types.`)
         }
         if (price === null || price < 0) rowErrors.push(`Row ${rowNumber}: price must be a valid non-negative number.`)
         if (amount === null || amount < 0 || !Number.isInteger(amount)) {
@@ -403,7 +422,7 @@ export function InventoryPage() {
           amount: amount ?? 0,
           category,
           cost,
-          unit_type: unitType,
+          unit_type: unitType?.toLowerCase(),
         })
       })
 
@@ -469,18 +488,34 @@ export function InventoryPage() {
     setTimeout(() => setStatusMessage(null), 4000)
   }
 
-  function downloadInventoryTemplate() {
-    downloadCsv('inventory-import-template.csv', [
-      {
-        name: 'Engine Oil 5W-30',
-        description: 'Fully synthetic oil 1L bottle',
-        price: 450,
-        amount: 30,
-        category: INVENTORY_CATEGORIES[0] ?? 'Engine Oil',
-        cost: 320,
-        unit_type: 'piece',
-      },
-    ])
+  async function downloadInventoryTemplate() {
+    await downloadSpreadsheetTemplate({
+      filename: 'inventory-import-template.xlsx',
+      sheetName: 'Inventory Template',
+      columns: [
+        { header: 'Item', example: 'Engine Oil 5W-30', width: 28 },
+        { header: 'Description', example: 'Fully synthetic oil 1L bottle', width: 42 },
+        { header: 'Selling Price', example: 450, width: 16 },
+        { header: 'Stock', example: 30, width: 12 },
+        {
+          header: 'Category',
+          example: INVENTORY_CATEGORIES[0] ?? 'Engine Parts',
+          width: 20,
+          dropdownOptions: [...INVENTORY_CATEGORIES],
+          promptTitle: 'Inventory category',
+          prompt: 'Choose one of the configured inventory categories.',
+        },
+        { header: 'Base Cost (MSRP)', example: 320, width: 18 },
+        {
+          header: 'Unit Type',
+          example: INVENTORY_UNIT_TYPES[0],
+          width: 16,
+          dropdownOptions: [...INVENTORY_UNIT_TYPES],
+          promptTitle: 'Inventory unit type',
+          prompt: 'Choose the same unit type used in the Add item form.',
+        },
+      ],
+    })
   }
 
   async function handleRestock(quantity: number) {
@@ -537,7 +572,7 @@ export function InventoryPage() {
   return (
     <div className="space-y-8">
       <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.14),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.25),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
@@ -548,45 +583,16 @@ export function InventoryPage() {
                 <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Inventory management</h1>
               </div>
             </div>
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Track parts availability, avoid stockouts, and keep your auto repair operations running smoothly.</p>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 ">Track parts availability, avoid stockouts, and keep your auto repair operations running smoothly.</p>
           </div>
-          {isAdmin() && (
-            <div className="self-start lg:self-auto">
-              <div className="flex flex-wrap gap-2">
-                <input
-                  ref={inventoryImportInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  className="hidden"
-                  onChange={handleBulkInventoryImport}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={downloadInventoryTemplate}
-                >
-                  Download Template
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => inventoryImportInputRef.current?.click()}
-                  disabled={bulkCreateItems.isPending}
-                  className="gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload CSV/Excel
-                </Button>
-                <Button onClick={handleCreate} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add item
-                </Button>
-              </div>
-              <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                CSV/Excel columns: <span className="font-medium">name, description, price, amount, category</span>, optional <span className="font-medium">cost, unit_type</span>.
-              </p>
+          {isAdmin() ? (
+            <div className="self-start lg:ml-auto lg:self-auto">
+              <Button onClick={handleCreate} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add item
+              </Button>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -630,7 +636,7 @@ export function InventoryPage() {
         </div>
       )}
 
-      {isAdmin() && inventoryImportPreview && (
+      {inventoryImportPreview && (
         <section className="rounded-[22px] border border-slate-200 bg-white/95 p-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.35)] dark:border-slate-800 dark:bg-slate-900/90">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
@@ -696,6 +702,45 @@ export function InventoryPage() {
       )}
 
       <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+        <div className="mb-6 flex flex-col gap-4 rounded-[24px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(240,249,255,0.96),rgba(224,242,254,0.82))] p-4 shadow-[0_18px_44px_-34px_rgba(14,116,144,0.55)] dark:border-sky-900/50 dark:bg-[linear-gradient(135deg,rgba(8,47,73,0.72),rgba(15,23,42,0.92))] md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-white/80 p-2.5 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+              <Upload className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="mt-1 text-base font-semibold text-slate-950 dark:text-white">Bulk import tools</h2>
+              <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Download the template, fill it offline, then upload your CSV or Excel file to review rows before importing.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={inventoryImportInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleBulkInventoryImport}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={downloadInventoryTemplate}
+              className="border-sky-200 bg-white/90 text-sky-800 hover:bg-sky-50 dark:border-sky-900/60 dark:bg-slate-950/70 dark:text-sky-200 dark:hover:bg-sky-950/30"
+            >
+              Download Template
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => inventoryImportInputRef.current?.click()}
+              disabled={bulkCreateItems.isPending}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload CSV/Excel
+            </Button>
+          </div>
+        </div>
+
         <div className="mb-6 rounded-[22px] border border-slate-200 bg-slate-50/90 p-4 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="grid gap-3 md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <div>

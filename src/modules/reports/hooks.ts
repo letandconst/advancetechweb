@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '../../lib/queryKeys'
 import { supabase } from '../../lib/supabase'
 import { ensureNoSupabaseError } from '../../lib/supabaseRequest'
+import { calculateAggregateMetrics, calculateInventoryMetrics, categorizeByMargin } from '../inventory/metrics'
 import { InventoryItem, InventoryLog, JobOrder, JobOrderWorkItem } from '../../types'
 import {
   ReportsAnalyticsResult,
@@ -9,6 +10,9 @@ import {
   ReportsFilters,
   ReportsInventoryLogRow,
   ReportsInventoryMovementPoint,
+  ReportsInventoryProfitItem,
+  ReportsInventoryProfitSummary,
+  ReportsMarginDistributionPoint,
   ReportsPeriod,
   ReportsServicePoint,
   ReportsStatusPoint,
@@ -212,6 +216,19 @@ function createRecentInventoryMovementRange(now = new Date()): ReportsDateRange 
   }
 }
 
+function createRecentJobVolumeRange(now = new Date()): ReportsDateRange {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0)
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+  const range = toIsoRange(start, end)
+
+  return {
+    start: range.start,
+    end: range.end,
+    label: 'Last 7 days',
+    bucket: 'day',
+  }
+}
+
 function deriveStatusBreakdown(jobOrders: JobOrder[]): ReportsStatusPoint[] {
   const counts = jobOrders.reduce<Record<string, number>>((acc, jobOrder) => {
     acc[jobOrder.status] = (acc[jobOrder.status] ?? 0) + 1
@@ -366,19 +383,85 @@ function normalizeInventoryLogs(rows: Partial<InventoryLog>[]) {
   return (rows ?? []) as InventoryLog[]
 }
 
+function normalizeInventoryItems(rows: Partial<InventoryItem>[]) {
+  return (rows ?? []) as InventoryItem[]
+}
+
+function deriveInventoryProfitSummary(items: InventoryItem[]): ReportsInventoryProfitSummary {
+  const aggregate = calculateAggregateMetrics(items)
+
+  return {
+    totalItems: aggregate.total_items,
+    totalUnits: aggregate.total_units,
+    totalRetailValue: aggregate.total_retail_value,
+    totalCostValue: aggregate.total_cost_value,
+    totalProfit: aggregate.total_profit,
+    overallMarginPct: aggregate.overall_margin_pct,
+    averageProfitPerUnit: aggregate.total_units ? aggregate.total_profit / aggregate.total_units : 0,
+    itemsWithCost: aggregate.items_with_cost,
+    itemsWithoutCost: aggregate.items_without_cost,
+  }
+}
+
+function deriveTopInventoryProfitItems(items: InventoryItem[]): ReportsInventoryProfitItem[] {
+  return deriveInventoryProfitItems(items)
+    .slice(0, 8)
+}
+
+function deriveInventoryProfitItems(items: InventoryItem[]): ReportsInventoryProfitItem[] {
+  return items
+    .filter((item) => item.amount > 0)
+    .map((item) => {
+      const metrics = calculateInventoryMetrics(item)
+
+      return {
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        amount: item.amount,
+        sellingPrice: item.price,
+        baseCost: item.cost ?? null,
+        profitPerUnit: metrics.profit_per_unit,
+        marginPct: metrics.profit_margin_pct,
+        totalProfit: metrics.total_profit,
+      }
+    })
+    .sort((left, right) => right.totalProfit - left.totalProfit || right.profitPerUnit - left.profitPerUnit)
+}
+
+function deriveMarginDistribution(items: InventoryItem[]): ReportsMarginDistributionPoint[] {
+  const groups = categorizeByMargin(items)
+
+  return [
+    { key: 'high_margin', label: 'High margin', count: groups.high_margin.length },
+    { key: 'good_margin', label: 'Good margin', count: groups.good_margin.length },
+    { key: 'acceptable_margin', label: 'Acceptable', count: groups.acceptable_margin.length },
+    { key: 'low_margin', label: 'Low margin', count: groups.low_margin.length },
+    { key: 'no_profit', label: 'No profit', count: groups.no_profit.length },
+    { key: 'unknown_cost', label: 'No cost set', count: groups.unknown_cost.length },
+  ]
+}
+
 export function useReportsAnalytics(filters: ReportsFilters) {
   const range = resolveReportsDateRange(filters)
   const recentMovementRange = createRecentInventoryMovementRange()
+  const recentJobVolumeRange = createRecentJobVolumeRange()
 
   return useQuery({
     queryKey: queryKeys.reportsAnalytics(filters, range),
     queryFn: async () => {
-      const [jobOrdersResult, inventoryLogsResult, recentInventoryLogsResult] = await Promise.all([
+      const [jobOrdersResult, recentJobOrdersResult, inventoryLogsResult, recentInventoryLogsResult, inventoryItemsResult] = await Promise.all([
         supabase
           .from('job_orders')
           .select('id, job_order_code, customer_name, mechanic_name, status, total, parts_total, oil_fuel_total, labor_total, discount_amount, work_requested, created_at, updated_at, job_date')
           .gte('created_at', range.start)
           .lte('created_at', range.end)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('job_orders')
+          .select('id, job_order_code, customer_name, mechanic_name, status, total, parts_total, oil_fuel_total, labor_total, discount_amount, work_requested, created_at, updated_at, job_date')
+          .gte('created_at', recentJobVolumeRange.start)
+          .lte('created_at', recentJobVolumeRange.end)
           .order('created_at', { ascending: true }),
         supabase
           .from('inventory_logs')
@@ -392,15 +475,23 @@ export function useReportsAnalytics(filters: ReportsFilters) {
           .gte('created_at', recentMovementRange.start)
           .lte('created_at', recentMovementRange.end)
           .order('created_at', { ascending: true }),
+        supabase
+          .from('inventory_items')
+          .select('id, name, description, price, cost, amount, category, unit_type, created_at, updated_at')
+          .order('amount', { ascending: false }),
       ])
 
       ensureNoSupabaseError(jobOrdersResult, 'Failed to load job orders for reports')
+  ensureNoSupabaseError(recentJobOrdersResult, 'Failed to load recent job orders for volume reporting')
       ensureNoSupabaseError(inventoryLogsResult, 'Failed to load inventory logs for reports')
       ensureNoSupabaseError(recentInventoryLogsResult, 'Failed to load recent inventory logs for reports')
+      ensureNoSupabaseError(inventoryItemsResult, 'Failed to load inventory items for profit reporting')
 
       const jobOrders = normalizeJobOrders(jobOrdersResult.data ?? [])
+  const recentJobOrders = normalizeJobOrders(recentJobOrdersResult.data ?? [])
       const inventoryLogs = normalizeInventoryLogs(inventoryLogsResult.data ?? [])
       const recentInventoryLogs = normalizeInventoryLogs(recentInventoryLogsResult.data ?? [])
+      const inventoryItems = normalizeInventoryItems(inventoryItemsResult.data ?? [])
       const referenceIds = [...new Set(
         inventoryLogs
           .filter((log) => log.reference_type === 'job-order' && Boolean(log.reference_id))
@@ -457,10 +548,15 @@ export function useReportsAnalytics(filters: ReportsFilters) {
         summary: deriveSummary(jobOrders, inventoryLogs),
         statusBreakdown: deriveStatusBreakdown(jobOrders),
         revenueTrend: deriveRevenueTrend(jobOrders, range),
+        recentJobVolumeTrend: deriveRevenueTrend(recentJobOrders, recentJobVolumeRange),
         topServices: deriveTopServices(jobOrders),
         inventoryMovementTrend: deriveInventoryMovementTrend(inventoryLogs, range),
         recentInventoryMovementTrend: deriveInventoryMovementTrend(recentInventoryLogs, recentMovementRange),
         inventoryLogs: deriveInventoryLogs(inventoryLogs, jobOrderCodeMap, inventoryPricingMap),
+        inventoryProfitSummary: deriveInventoryProfitSummary(inventoryItems),
+        inventoryProfitItems: deriveInventoryProfitItems(inventoryItems),
+        topInventoryProfitItems: deriveTopInventoryProfitItems(inventoryItems),
+        marginDistribution: deriveMarginDistribution(inventoryItems),
       } as ReportsAnalyticsResult
     },
   })

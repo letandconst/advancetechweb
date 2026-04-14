@@ -1,13 +1,20 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, CheckCircle, Plus, ShieldAlert, Sparkles, Wrench, CircleDollarSign, FileText, Upload } from 'lucide-react'
-import { Button, DataTable, LoadingSpinner, Modal } from '../components'
+import { Button, LoadingSpinner, Modal } from '../components'
+import { DataTable } from '../components/DataTable'
 import { useAuth } from '../hooks'
 import { supabase } from '../lib/supabase'
 import { ServiceForm } from '../modules/services/components/ServiceForm'
 import { Service, ServiceFormData } from '../modules/services/types'
 import { ServiceFilters, useBulkCreateServices, useCreateService, useDeactivateService, useServices, useUpdateService } from '../modules/services/hooks'
-import { downloadCsv } from '../utils/csv'
-import { parseSpreadsheetFile, toNumberOrNull } from '../utils/spreadsheet'
+import { downloadSpreadsheetTemplate, getSpreadsheetValue, normalizeSpreadsheetHeader, parseSpreadsheetFile, toNumberOrNull } from '../utils/spreadsheet'
+
+const SERVICE_IMPORT_ALIASES = {
+  name: ['Service', 'Name'],
+  description: ['Description'],
+  price: ['Price'],
+  status: ['Status'],
+} as const
 
 function formatPhpCurrency(value: number) {
   return new Intl.NumberFormat('en-PH', {
@@ -201,14 +208,17 @@ export function ServicesPage() {
         return
       }
 
-      const requiredColumns = ['name', 'description', 'price']
       const availableColumns = new Set(Object.keys(nonEmptyRows[0]))
-      const missingColumns = requiredColumns.filter((column) => !availableColumns.has(column))
+      const missingColumns = [
+        { label: 'Service', aliases: SERVICE_IMPORT_ALIASES.name },
+        { label: 'Description', aliases: SERVICE_IMPORT_ALIASES.description },
+        { label: 'Price', aliases: SERVICE_IMPORT_ALIASES.price },
+      ].filter(({ aliases }) => !aliases.some((alias) => availableColumns.has(normalizeSpreadsheetHeader(alias))))
 
       if (missingColumns.length) {
         setStatusMessage({
           type: 'error',
-          message: `Missing required columns: ${missingColumns.join(', ')}. Expected columns: name, description, price, status(optional).`,
+          message: `Missing required columns: ${missingColumns.map((column) => column.label).join(', ')}. Expected columns: Service, Description, Price, Status (optional).`,
         })
         return
       }
@@ -219,10 +229,10 @@ export function ServicesPage() {
 
       nonEmptyRows.forEach((row, index) => {
         const rowNumber = index + 2
-        const name = row.name?.trim() ?? ''
-        const description = row.description?.trim() ?? ''
-        const priceRaw = row.price?.trim() ?? ''
-        const statusRaw = (row.status?.trim().toLowerCase() ?? 'active') as ServiceFormData['status']
+        const name = getSpreadsheetValue(row, SERVICE_IMPORT_ALIASES.name).trim()
+        const description = getSpreadsheetValue(row, SERVICE_IMPORT_ALIASES.description).trim()
+        const priceRaw = getSpreadsheetValue(row, SERVICE_IMPORT_ALIASES.price).trim()
+        const statusRaw = (getSpreadsheetValue(row, SERVICE_IMPORT_ALIASES.status).trim().toLowerCase() || 'active') as ServiceFormData['status']
         const price = toNumberOrNull(priceRaw)
         const rowErrors: string[] = []
         const normalizedName = normalizeText(name)
@@ -312,15 +322,24 @@ export function ServicesPage() {
     setTimeout(() => setStatusMessage(null), 4000)
   }
 
-  function downloadServiceTemplate() {
-    downloadCsv('services-import-template.csv', [
-      {
-        name: 'Oil Change Labor',
-        description: 'Labor for full oil and filter replacement',
-        price: 1200,
-        status: 'active',
-      },
-    ])
+  async function downloadServiceTemplate() {
+    await downloadSpreadsheetTemplate({
+      filename: 'services-import-template.xlsx',
+      sheetName: 'Services Template',
+      columns: [
+        { header: 'Service', example: 'Oil Change Labor', width: 28 },
+        { header: 'Description', example: 'Labor for full oil and filter replacement', width: 42 },
+        { header: 'Price', example: 1200, width: 14 },
+        {
+          header: 'Status',
+          example: 'active',
+          width: 16,
+          dropdownOptions: ['active', 'inactive'],
+          promptTitle: 'Service status',
+          prompt: 'Choose active or inactive.',
+        },
+      ],
+    })
   }
 
   function handleCancelForm() {
@@ -364,7 +383,7 @@ export function ServicesPage() {
   return (
     <div className="space-y-8">
       <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.13),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.2),_transparent_34%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.98))]">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-white/80 p-3 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
@@ -375,45 +394,16 @@ export function ServicesPage() {
                 <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Services management</h1>
               </div>
             </div>
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Maintain pricing for standard specialization work and ad hoc repair services in one module.</p>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 max-w-lg">Maintain pricing for standard specialization work and ad hoc repair services in one module.</p>
           </div>
-          {isAdmin() && (
-            <div className="self-start lg:self-auto">
-              <div className="flex flex-wrap gap-2">
-                <input
-                  ref={serviceImportInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  className="hidden"
-                  onChange={handleBulkServiceImport}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={downloadServiceTemplate}
-                >
-                  Download Template
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => serviceImportInputRef.current?.click()}
-                  disabled={bulkCreateServices.isPending}
-                  className="gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload CSV/Excel
-                </Button>
-                <Button onClick={handleCreate} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add service
-                </Button>
-              </div>
-              <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                CSV/Excel columns: <span className="font-medium">name, description, price</span>, and optional <span className="font-medium">status</span> (active/inactive).
-              </p>
+          {isAdmin() ? (
+            <div className="self-start lg:ml-auto lg:self-auto">
+              <Button onClick={handleCreate} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add service
+              </Button>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -456,7 +446,7 @@ export function ServicesPage() {
         </div>
       )}
 
-      {isAdmin() && serviceImportPreview && (
+      {serviceImportPreview && (
         <section className="rounded-[22px] border border-slate-200 bg-white/95 p-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.35)] dark:border-slate-800 dark:bg-slate-900/90">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
@@ -519,6 +509,45 @@ export function ServicesPage() {
       )}
 
       <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+        <div className="mb-6 flex flex-col gap-4 rounded-[24px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(240,249,255,0.96),rgba(224,242,254,0.82))] p-4 shadow-[0_18px_44px_-34px_rgba(14,116,144,0.55)] dark:border-sky-900/50 dark:bg-[linear-gradient(135deg,rgba(8,47,73,0.72),rgba(15,23,42,0.92))] md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-white/80 p-2.5 text-sky-700 shadow-sm dark:bg-slate-950/60 dark:text-sky-300">
+              <Upload className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="mt-1 text-base font-semibold text-slate-950 dark:text-white">Bulk import tools</h2>
+              <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Download the template, fill it offline, then upload your CSV or Excel file to review rows before importing.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={serviceImportInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleBulkServiceImport}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={downloadServiceTemplate}
+              className="border-sky-200 bg-white/90 text-sky-800 hover:bg-sky-50 dark:border-sky-900/60 dark:bg-slate-950/70 dark:text-sky-200 dark:hover:bg-sky-950/30"
+            >
+              Download Template
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => serviceImportInputRef.current?.click()}
+              disabled={bulkCreateServices.isPending}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload CSV/Excel
+            </Button>
+          </div>
+        </div>
+
         <div className="mb-6 rounded-[22px] border border-slate-200 bg-slate-50/90 p-4 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="grid gap-3 md:grid-cols-[minmax(0,1.8fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)]">
             <div>

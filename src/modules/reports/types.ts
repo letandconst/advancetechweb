@@ -70,13 +70,48 @@ export interface ReportsInventoryLogRow extends InventoryLog {
   profit_per_unit: number | null
 }
 
+export interface ReportsInventoryProfitSummary {
+  totalItems: number
+  totalUnits: number
+  totalRetailValue: number
+  totalCostValue: number
+  totalProfit: number
+  overallMarginPct: number
+  averageProfitPerUnit: number
+  itemsWithCost: number
+  itemsWithoutCost: number
+}
+
+export interface ReportsInventoryProfitItem {
+  id: string
+  name: string
+  category: string
+  amount: number
+  sellingPrice: number
+  baseCost: number | null
+  profitPerUnit: number
+  marginPct: number
+  totalProfit: number
+}
+
+export interface ReportsMarginDistributionPoint {
+  key: 'high_margin' | 'good_margin' | 'acceptable_margin' | 'low_margin' | 'no_profit' | 'unknown_cost'
+  label: string
+  count: number
+}
+
 export interface ReportsAnalyticsResult {
   range: ReportsDateRange
   summary: ReportsSummary
   statusBreakdown: ReportsStatusPoint[]
   revenueTrend: ReportsTrendPoint[]
+  recentJobVolumeTrend: ReportsTrendPoint[]
   topServices: ReportsServicePoint[]
   inventoryMovementTrend: ReportsInventoryMovementPoint[]
   recentInventoryMovementTrend: ReportsInventoryMovementPoint[]
   inventoryLogs: ReportsInventoryLogRow[]
+  inventoryProfitSummary: ReportsInventoryProfitSummary
+  inventoryProfitItems: ReportsInventoryProfitItem[]
+  topInventoryProfitItems: ReportsInventoryProfitItem[]
+  marginDistribution: ReportsMarginDistributionPoint[]
 }

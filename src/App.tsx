@@ -1,20 +1,21 @@
-import { ReactNode } from 'react'
+import { ReactNode, Suspense, lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { Layout } from './components/Layout'
 import { LoadingSpinner } from './components/LoadingSpinner'
-import { AuthPage } from './pages/AuthPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { JobOrdersPage } from './pages/JobOrdersPage'
-import { JobOrderFormPage } from './pages/JobOrderFormPage'
-import { MechanicsPage } from './pages/MechanicsPage'
-import { ServicesPage } from './pages/ServicesPage'
-import { InventoryPage } from './pages/InventoryPage'
-import { ReportsPage } from './pages/ReportsPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { ProfilePage } from './pages/ProfilePage'
-import { CustomersPage, UsersPage } from './pages'
 import { ROUTES } from './constants'
 import { useAuth } from './hooks'
+
+const Layout = lazy(async () => ({ default: (await import('./components/Layout')).Layout }))
+const AuthPage = lazy(async () => ({ default: (await import('./pages/AuthPage')).AuthPage }))
+const DashboardPage = lazy(async () => ({ default: (await import('./pages/DashboardPage')).DashboardPage }))
+const JobOrdersPage = lazy(async () => ({ default: (await import('./pages/JobOrdersPage')).JobOrdersPage }))
+const JobOrderFormPage = lazy(async () => ({ default: (await import('./pages/JobOrderFormPage')).JobOrderFormPage }))
+const MechanicsPage = lazy(async () => ({ default: (await import('./pages/MechanicsPage')).MechanicsPage }))
+const ServicesPage = lazy(async () => ({ default: (await import('./pages/ServicesPage')).ServicesPage }))
+const InventoryPage = lazy(async () => ({ default: (await import('./pages/InventoryPage')).InventoryPage }))
+const ReportsPage = lazy(async () => ({ default: (await import('./pages/ReportsPage')).ReportsPage }))
+const ProfilePage = lazy(async () => ({ default: (await import('./pages/ProfilePage')).ProfilePage }))
+const CustomersPage = lazy(async () => ({ default: (await import('./pages')).CustomersPage }))
+const UsersPage = lazy(async () => ({ default: (await import('./pages')).UsersPage }))
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -30,139 +31,150 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+function RouteFallback() {
+  return <LoadingSpinner message="Loading page..." overlay />
+}
+
+function ProtectedLayout({ children }: { children: ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<RouteFallback />}>
+        <Layout>{children}</Layout>
+      </Suspense>
+    </ProtectedRoute>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={ROUTES.LOGIN} element={<AuthPage />} />
+        <Route
+          path={ROUTES.LOGIN}
+          element={(
+            <Suspense fallback={<RouteFallback />}>
+              <AuthPage />
+            </Suspense>
+          )}
+        />
         <Route
           path={ROUTES.DASHBOARD}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <DashboardPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <JobOrdersPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS_NEW}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <JobOrderFormPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS_VIEW}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <JobOrderFormPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.JOB_ORDERS_EDIT}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <JobOrderFormPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.MECHANICS}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <MechanicsPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.CUSTOMERS}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <CustomersPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.USERS}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <UsersPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.SERVICES}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <ServicesPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.INVENTORY}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <InventoryPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.REPORTS}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <ReportsPage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.SETTINGS}
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <SettingsPage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route
           path={ROUTES.PROFILE}
           element={
-            <ProtectedRoute>
-              <Layout>
+            <ProtectedLayout>
+              <Suspense fallback={<RouteFallback />}>
                 <ProfilePage />
-              </Layout>
-            </ProtectedRoute>
+              </Suspense>
+            </ProtectedLayout>
           }
         />
         <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />

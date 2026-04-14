@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { INVENTORY_CATEGORIES } from '../../../constants'
+import { INVENTORY_CATEGORIES, INVENTORY_UNIT_TYPES } from '../../../constants'
 import { Button } from '../../../components'
 import { InventoryFormData } from '../types'
 
@@ -25,7 +25,7 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
     cost: undefined,
     amount: 0,
     category: INVENTORY_CATEGORIES[0],
-    unit_type: 'piece',
+    unit_type: INVENTORY_UNIT_TYPES[0],
     ...initialData,
   })
 
@@ -39,7 +39,7 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
       cost: undefined,
       amount: 0,
       category: INVENTORY_CATEGORIES[0],
-      unit_type: 'piece',
+      unit_type: INVENTORY_UNIT_TYPES[0],
       ...initialData,
     })
     setErrors({})
@@ -82,7 +82,7 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
       price: Number(formData.price),
       cost: formData.cost !== undefined && formData.cost !== null ? Number(formData.cost) : undefined,
       amount: Math.max(Math.floor(formData.amount), 0),
-      unit_type: formData.unit_type ?? 'piece',
+      unit_type: formData.unit_type ?? INVENTORY_UNIT_TYPES[0],
     })
   }
 
@@ -180,16 +180,15 @@ export function InventoryForm({ initialData, onSubmit, onCancel, loading = false
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Unit Type</label>
               <select
-                value={formData.unit_type ?? 'piece'}
+                value={formData.unit_type ?? INVENTORY_UNIT_TYPES[0]}
                 onChange={(event) => handleChange('unit_type', event.target.value)}
                 className={`${inputClassName} ${errors.unit_type ? errorBorderClassName : normalBorderClassName}`}
               >
-                <option value="piece">Piece</option>
-                <option value="liter">Liter</option>
-                <option value="kg">Kilogram</option>
-                <option value="box">Box</option>
-                <option value="pack">Pack</option>
-                <option value="set">Set</option>
+                {INVENTORY_UNIT_TYPES.map((unitType) => (
+                  <option key={unitType} value={unitType}>
+                    {unitType.charAt(0).toUpperCase() + unitType.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
 
