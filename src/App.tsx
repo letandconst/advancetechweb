@@ -16,6 +16,7 @@ const ReportsPage = lazy(async () => ({ default: (await import('./pages/ReportsP
 const ProfilePage = lazy(async () => ({ default: (await import('./pages/ProfilePage')).ProfilePage }))
 const CustomersPage = lazy(async () => ({ default: (await import('./pages')).CustomersPage }))
 const UsersPage = lazy(async () => ({ default: (await import('./pages')).UsersPage }))
+const ResetPasswordPage = lazy(async () => ({ default: (await import('./pages/ResetPasswordPage')).ResetPasswordPage }))
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -54,6 +55,14 @@ function App() {
           element={(
             <Suspense fallback={<RouteFallback />}>
               <AuthPage />
+            </Suspense>
+          )}
+        />
+        <Route
+          path={ROUTES.RESET_PASSWORD}
+          element={(
+            <Suspense fallback={<RouteFallback />}>
+              <ResetPasswordPage />
             </Suspense>
           )}
         />

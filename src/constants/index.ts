@@ -35,7 +35,8 @@ export const ROUTES = {
   INVENTORY: '/inventory',
   REPORTS: '/reports',
   PROFILE: '/profile',
-  LOGIN: '/login'
+  LOGIN: '/login',
+  RESET_PASSWORD: '/auth/reset-password'
 } as const
 
 export const SERVICE_SPECIALIZATIONS = [
