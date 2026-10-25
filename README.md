@@ -144,6 +144,10 @@ Recommended: execute policy/function scripts in a controlled environment first, 
 - `/settings` (admin only)
 - `/profile`
 
+## Demo Login ( User Role )
+username : demo
+password : demouser
+
 ## Notes
 
 - Settings currently persist in client storage using `advanced-tech-app-settings`.
